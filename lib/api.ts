@@ -67,7 +67,7 @@ export async function apiCall<T>(
  */
 export const authAPI = {
   login: async (email: string, password: string) => {
-    return apiCall('/auth/login', {
+    return apiCall('/auth/sign-in', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });

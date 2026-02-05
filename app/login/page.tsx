@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Droplet } from 'lucide-react';
+import { authAPI } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,25 +19,38 @@ export default function LoginPage() {
 
  const handleLogin = async (e: React.FormEvent) => {
   e.preventDefault();
-
-  // optional: fake loading for UX
+  setError('');
   setLoading(true);
+console.log(email);
+  try {
+    const response: any = await authAPI.login(email, password);
+    console.log(response);
 
-  // optional: store dummy user/token if your app expects it later
-  localStorage.setItem('authToken', 'dummy-token');
-  localStorage.setItem(
-    'user',
-    JSON.stringify({
-      email,
-      role: 'admin',
-    })
-  );
+    if (response.statusCode === 200 && response.data) {
+      console.log('sd')
+      // Store tokens
+      localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
+      
+      // Decode and store user info from token
+      const tokenPayload = JSON.parse(atob(response.data.accessToken.split('.')[1]));
+      localStorage.setItem('user', JSON.stringify({
+        id: tokenPayload.id,
+        email: tokenPayload.Email,
+        username: tokenPayload.UserName,
+        role: tokenPayload.role,
+      }));
 
-  // small delay just for effect (optional)
-  setTimeout(() => {
-    router.push('/home');
+      router.push('/home');
+    } else {
+      setError(response.errors || 'Login failed. Please try again.');
+    }
+  } catch (err: any) {
+    console.error('[v0] Login error:', err);
+    setError(err.message || 'Invalid email or password. Please try again.');
+  } finally {
     setLoading(false);
-  }, 500);
+  }
 };
 
   return (
@@ -120,9 +134,9 @@ export default function LoginPage() {
 
             {/* Demo Credentials */}
             <div className="mt-6 p-3 bg-secondary/10 border border-secondary/30 rounded-lg text-xs text-muted-foreground">
-              <p className="font-semibold text-foreground mb-1">Demo Credentials:</p>
-              <p>Email: demo@example.com</p>
-              <p>Password: demo123</p>
+              <p className="font-semibold text-foreground mb-1">Test Credentials:</p>
+              <p>Email: manish@admin.com</p>
+              <p>Password: Test@123</p>
             </div>
           </div>
         </Card>
