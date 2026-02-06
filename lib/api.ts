@@ -139,10 +139,10 @@ export const riverAPI = {
     });
   },
 
-  create: async (riverData: any) => {
+  create: async (name: string, location: string, code:string) => {
     return apiCall('/rivers', {
       method: 'POST',
-      body: JSON.stringify(riverData),
+      body: JSON.stringify({ name, location , code}),
     });
   },
 
