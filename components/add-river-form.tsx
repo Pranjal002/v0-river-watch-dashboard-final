@@ -1,12 +1,11 @@
 'use client';
 
-import React from "react"
-
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
+import { riverAPI } from '@/lib/api'; // Adjust path if your api file is named/located differently
 
 interface AddRiverFormProps {
   onBack: () => void;
@@ -19,6 +18,10 @@ export default function AddRiverForm({ onBack }: AddRiverFormProps) {
     code: '',
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -27,11 +30,46 @@ export default function AddRiverForm({ onBack }: AddRiverFormProps) {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[v0] River form submitted:', formData);
-    // API call will be added here later
+    
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      
+      // Use the riverAPI.create method
+      const response = await riverAPI.create(
+        formData.name.trim(),
+        formData.location.trim(),
+        formData.code.trim()
+      );
+
+      // If we reach here → request was successful (apiCall throws on error)
+      setSuccess('River added successfully!');
+      
+      // Reset form
+      setFormData({
+        name: '',
+        location: '',
+        code: '',
+      });
+
+      // Optional: go back to list or previous screen after a short delay
+      setTimeout(() => {
+        onBack();
+      }, 1500);
+
+    } catch (err: any) {
+      console.error('Failed to add river:', err);
+      
+      // Show user-friendly error message
+      const errorMessage = err.message || 'Failed to add river. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,6 +98,7 @@ export default function AddRiverForm({ onBack }: AddRiverFormProps) {
               onChange={handleChange}
               placeholder="Enter river name"
               required
+              disabled={loading}
               className="w-full"
             />
           </div>
@@ -74,8 +113,9 @@ export default function AddRiverForm({ onBack }: AddRiverFormProps) {
               type="text"
               value={formData.location}
               onChange={handleChange}
-              placeholder="Enter river location"
+              placeholder="Enter river location (e.g. Kathmandu Valley)"
               required
+              disabled={loading}
               className="w-full"
             />
           </div>
@@ -90,24 +130,41 @@ export default function AddRiverForm({ onBack }: AddRiverFormProps) {
               type="text"
               value={formData.code}
               onChange={handleChange}
-              placeholder="Enter river code"
+              placeholder="Enter unique river code"
               required
+              disabled={loading}
               className="w-full"
             />
           </div>
 
+          {/* Feedback messages */}
+          {error && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded-md text-green-700 text-sm">
+              {success}
+            </div>
+          )}
+
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
+              disabled={loading}
               className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white"
             >
-              Submit
+              {loading ? 'Adding...' : 'Add River'}
             </Button>
+
             <Button
               type="button"
               onClick={onBack}
               variant="outline"
-              className="flex-1 bg-transparent"
+              disabled={loading}
+              className="flex-1"
             >
               Cancel
             </Button>
