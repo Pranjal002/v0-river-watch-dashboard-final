@@ -1,9 +1,9 @@
 /**
  * API Client for RiverWatch
- * Configure your backend API URL here
+ * Uses Next.js API routes by default
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
@@ -128,33 +128,33 @@ export const userAPI = {
  */
 export const riverAPI = {
   getAll: async () => {
-    return apiCall('/rivers', {
+    return apiCall('/river', {
       method: 'GET',
     });
   },
 
   getById: async (id: string) => {
-    return apiCall(`/rivers/${id}`, {
+    return apiCall(`/river/${id}`, {
       method: 'GET',
     });
   },
 
-  create: async (name: string, location: string, code:string) => {
-    return apiCall('/rivers', {
+  create: async (name: string, location: string, code: string) => {
+    return apiCall('/river', {
       method: 'POST',
-      body: JSON.stringify({ name, location , code}),
+      body: JSON.stringify({ name, location, code }),
     });
   },
 
   update: async (id: string, riverData: any) => {
-    return apiCall(`/rivers/${id}`, {
+    return apiCall(`/river/${id}`, {
       method: 'PUT',
       body: JSON.stringify(riverData),
     });
   },
 
   delete: async (id: string) => {
-    return apiCall(`/rivers/${id}`, {
+    return apiCall(`/river/${id}`, {
       method: 'DELETE',
     });
   },
