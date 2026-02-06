@@ -30,6 +30,7 @@ export default function LoginPage() {
 
         // Store tokens
         localStorage.setItem('authToken', accessToken);
+        console.log(accessToken);
         // localStorage.setItem('refreshToken', refreshToken);
 
         // Safe token decode (optional)

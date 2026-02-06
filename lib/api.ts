@@ -140,7 +140,7 @@ export const riverAPI = {
   },
 
   create: async (name: string, location: string, code:string) => {
-    return apiCall('/rivers', {
+    return apiCall('/river', {
       method: 'POST',
       body: JSON.stringify({ name, location , code}),
     });
