@@ -133,6 +133,12 @@ export const riverAPI = {
     });
   },
 
+  getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
+    return apiCall(`/river/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+      method: 'GET',
+    });
+  },
+
   getById: async (id: string) => {
     return apiCall(`/rivers/${id}`, {
       method: 'GET',
