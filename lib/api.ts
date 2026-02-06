@@ -1,9 +1,9 @@
 /**
  * API Client for RiverWatch
- * Configure your backend API URL here
+ * Uses Next.js API routes by default
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
