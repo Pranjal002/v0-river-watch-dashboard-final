@@ -2,27 +2,55 @@
 
 import React from "react"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
+import { stationAPI, riverAPI } from '@/lib/api';
 
 interface AddStationFormProps {
   onBack: () => void;
 }
 
+interface River {
+  id: number;
+  name: string;
+}
+
 export default function AddStationForm({ onBack }: AddStationFormProps) {
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     location: '',
     basin: '',
-    river: '',
+    riverId: '',
     latitude: '',
     longitude: '',
     elevation: '',
     remarks: '',
   });
+
+  const [rivers, setRivers] = useState<River[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    fetchRivers();
+  }, []);
+
+  const fetchRivers = async () => {
+    try {
+      const response: any = await riverAPI.getPaged(1, 100);
+      if (response.data && response.data.items) {
+        setRivers(response.data.items);
+      }
+    } catch (err) {
+      console.error('Failed to fetch rivers:', err);
+      setError('Failed to load rivers');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -30,12 +58,53 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
       ...prev,
       [name]: value
     }));
+    // Clear messages when user modifies form
+    setError('');
+    setSuccess('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[v0] Station form submitted:', formData);
-    // API call will be added here later
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Validate required fields
+      if (!formData.name || !formData.code || !formData.location || !formData.basin || !formData.riverId) {
+        setError('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+
+      const stationPayload = {
+        name: formData.name,
+        code: formData.code,
+        location: formData.location,
+        basin: formData.basin,
+        riverId: parseInt(formData.riverId, 10),
+        latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+        elevation: formData.elevation ? parseFloat(formData.elevation) : undefined,
+        remarks: formData.remarks || undefined,
+      };
+
+      console.log('[v0] Submitting station data:', stationPayload);
+      const response = await stationAPI.upsert(stationPayload);
+      
+      setSuccess('Station created successfully!');
+      console.log('[v0] Station created:', response);
+      
+      // Reset form and go back after success
+      setTimeout(() => {
+        onBack();
+      }, 1500);
+    } catch (err: any) {
+      console.error('[v0] Error creating station:', err);
+      setError(err.message || 'Failed to create station. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -51,10 +120,22 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
       <Card className="p-8">
         <h2 className="text-2xl font-bold text-foreground mb-6">Add New Station</h2>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md text-green-700">
+            {success}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-              Station Name
+              Station Name <span className="text-red-500">*</span>
             </label>
             <Input
               id="name"
@@ -63,14 +144,30 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter station name"
-              required
+              disabled={loading}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="code" className="block text-sm font-medium text-foreground mb-2">
+              Station Code <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="code"
+              name="code"
+              type="text"
+              value={formData.code}
+              onChange={handleChange}
+              placeholder="Enter station code"
+              disabled={loading}
               className="w-full"
             />
           </div>
 
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-foreground mb-2">
-              Station Location
+              Station Location <span className="text-red-500">*</span>
             </label>
             <Input
               id="location"
@@ -79,14 +176,14 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               value={formData.location}
               onChange={handleChange}
               placeholder="Enter station location"
-              required
+              disabled={loading}
               className="w-full"
             />
           </div>
 
           <div>
             <label htmlFor="basin" className="block text-sm font-medium text-foreground mb-2">
-              Basin
+              Basin <span className="text-red-500">*</span>
             </label>
             <Input
               id="basin"
@@ -95,27 +192,29 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               value={formData.basin}
               onChange={handleChange}
               placeholder="Enter basin name"
-              required
+              disabled={loading}
               className="w-full"
             />
           </div>
 
           <div>
-            <label htmlFor="river" className="block text-sm font-medium text-foreground mb-2">
-              Select River
+            <label htmlFor="riverId" className="block text-sm font-medium text-foreground mb-2">
+              Select River <span className="text-red-500">*</span>
             </label>
             <select
-              id="river"
-              name="river"
-              value={formData.river}
+              id="riverId"
+              name="riverId"
+              value={formData.riverId}
               onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              disabled={loading || rivers.length === 0}
+              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
             >
               <option value="">Choose a river</option>
-              <option value="river1">River 1</option>
-              <option value="river2">River 2</option>
-              <option value="river3">River 3</option>
+              {rivers.map((river) => (
+                <option key={river.id} value={river.id}>
+                  {river.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -132,7 +231,7 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
                 value={formData.latitude}
                 onChange={handleChange}
                 placeholder="e.g., 2.1232"
-                required
+                disabled={loading}
                 className="w-full"
               />
             </div>
@@ -149,7 +248,7 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
                 value={formData.longitude}
                 onChange={handleChange}
                 placeholder="e.g., 2.1232"
-                required
+                disabled={loading}
                 className="w-full"
               />
             </div>
@@ -167,7 +266,7 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               value={formData.elevation}
               onChange={handleChange}
               placeholder="Enter elevation"
-              required
+              disabled={loading}
               className="w-full"
             />
           </div>
@@ -183,22 +282,25 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               onChange={handleChange}
               placeholder="Enter any additional remarks"
               rows={4}
-              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+              disabled={loading}
+              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none disabled:opacity-50"
             />
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button
               type="submit"
-              className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white"
+              disabled={loading}
+              className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white disabled:opacity-50"
             >
-              Submit
+              {loading ? 'Creating...' : 'Submit'}
             </Button>
             <Button
               type="button"
               onClick={onBack}
+              disabled={loading}
               variant="outline"
-              className="flex-1 bg-transparent"
+              className="flex-1 bg-transparent disabled:opacity-50"
             >
               Cancel
             </Button>

@@ -189,6 +189,24 @@ export const stationAPI = {
     });
   },
 
+  upsert: async (stationData: {
+    id?: number;
+    name: string;
+    code: string;
+    location: string;
+    basin: string;
+    latitude?: number;
+    longitude?: number;
+    elevation?: number;
+    riverId: number;
+    remarks?: string;
+  }) => {
+    return apiCall('/station', {
+      method: 'POST',
+      body: JSON.stringify(stationData),
+    });
+  },
+
   update: async (id: string, stationData: any) => {
     return apiCall(`/stations/${id}`, {
       method: 'PUT',
