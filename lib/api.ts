@@ -176,6 +176,12 @@ export const stationAPI = {
     });
   },
 
+  getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
+    return apiCall(`/Station/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+      method: 'GET',
+    });
+  },
+
   getById: async (id: string) => {
     return apiCall(`/stations/${id}`, {
       method: 'GET',
