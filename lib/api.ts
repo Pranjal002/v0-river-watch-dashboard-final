@@ -139,6 +139,12 @@ export const riverAPI = {
     });
   },
 
+  getDropdownView: async () => {
+    return apiCall('/river/drop-down-view', {
+      method: 'GET',
+    });
+  },
+
   getById: async (id: string) => {
     return apiCall(`/rivers/${id}`, {
       method: 'GET',

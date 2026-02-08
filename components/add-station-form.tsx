@@ -42,9 +42,9 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
 
   const fetchRivers = async () => {
     try {
-      const response: any = await riverAPI.getPaged(1, 100);
-      if (response.data && response.data.items) {
-        setRivers(response.data.items);
+      const response: any = await riverAPI.getDropdownView();
+      if (response.data && Array.isArray(response.data)) {
+        setRivers(response.data);
       }
     } catch (err) {
       console.error('Failed to fetch rivers:', err);
