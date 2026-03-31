@@ -132,6 +132,16 @@ export const riverAPI = {
       method: 'GET',
     });
   },
+  getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
+    return apiCall(`/river/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+      method: 'GET',
+    });
+  },
+  getDropdownView: async () => {
+    return apiCall('/river/drop-down-view', {
+      method: 'GET',
+    });
+  },
 
   getById: async (id: string) => {
     return apiCall(`/rivers/${id}`, {
@@ -169,6 +179,11 @@ export const stationAPI = {
       method: 'GET',
     });
   },
+  getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
+    return apiCall(`/Station/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+      method: 'GET',
+    });
+  },
 
   getById: async (id: string) => {
     return apiCall(`/stations/${id}`, {
@@ -176,8 +191,19 @@ export const stationAPI = {
     });
   },
 
-  create: async (stationData: any) => {
-    return apiCall('/stations', {
+  upsert: async (stationData: {
+    id?: number;
+    name: string;
+    code: string;
+    location: string;
+    basin: string;
+    latitude?: number;
+    longitude?: number;
+    elevation?: number;
+    riverId: number;
+    remarks?: string;
+  }) => {
+    return apiCall('/station', {
       method: 'POST',
       body: JSON.stringify(stationData),
     });
