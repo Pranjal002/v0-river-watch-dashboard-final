@@ -66,10 +66,10 @@ export async function apiCall<T>(
  * Authentication APIs
  */
 export const authAPI = {
-  login: async (email: string, password: string) => {
+  login: async (username: string, password: string) => {
     return apiCall('/auth/sign-in', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
   },
 
