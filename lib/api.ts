@@ -3,7 +3,7 @@
  * Configure your backend API URL here
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
