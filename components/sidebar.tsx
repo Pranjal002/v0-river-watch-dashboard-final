@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Droplet, Users, Waves, Map, MapPin, LogOut, Menu, X } from 'lucide-react';
+import { Droplet, Users, Waves, Map, MapPin, LogOut, Menu, X, LayoutDashboard, Activity } from 'lucide-react';
 
 export default function Sidebar() {
   const router = useRouter();
@@ -36,6 +36,28 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2">
         <div className="space-y-1">
+          {/* Dashboard */}
+          <Link href="/home">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Dashboard</span>
+            </Button>
+          </Link>
+
+          {/* View Gauge Readings */}
+          <Link href="/home/readings">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3"
+            >
+              <Activity className="w-4 h-4" />
+              <span>View Gauge Readings</span>
+            </Button>
+          </Link>
+
           {/* User Management */}
           <Link href="/home/users">
             <Button
@@ -58,9 +80,8 @@ export default function Sidebar() {
                 <span>River Management</span>
               </div>
               <svg
-                className={`w-4 h-4 transition-transform ${
-                  expandedRiver ? 'rotate-180' : ''
-                }`}
+                className={`w-4 h-4 transition-transform ${expandedRiver ? 'rotate-180' : ''
+                  }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -138,9 +159,8 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:relative inset-y-0 left-0 w-64 z-40 transition-transform duration-300 lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed lg:relative inset-y-0 left-0 w-64 z-40 transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <SidebarContent />
       </aside>

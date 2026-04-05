@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from 'next/navigation';
-import { Users, ArrowLeft, Eye, EyeOff, Loader2, CheckCircle, ChevronDown, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from 'next/navigation';
+import { Users, ArrowLeft, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { apiCall } from '@/lib/api';
 import Sidebar from '@/components/sidebar';
 
 // ─── Types ────────────────────────────────────────────────────────
-interface CreateUserForm {
+interface EditUserForm {
   fullName: string;
-  email: string; // Used for the UI/Validation
-  password: string;
-  confirmPassword: string;
-  phoneNumber: string;
+  email: string;
+  password?: string;
+  confirmPassword?: string;
+  phoneNumber?: string;
   riverId: number | '';
   stationId: number | '';
 }
@@ -31,11 +31,13 @@ interface StationOption {
   name: string;
 }
 
-export default function AddUserPage() {
+export default function EditUserPage() {
   const router = useRouter();
+  const params = useParams();
+  const userId = params.userId as string;
 
   // ─── State ──────────────────────────────────────────────────────
-  const [form, setForm] = useState<CreateUserForm>({
+  const [form, setForm] = useState<EditUserForm>({
     fullName: '',
     email: '',
     password: '',
@@ -52,18 +54,48 @@ export default function AddUserPage() {
   const [rivers, setRivers] = useState<RiverOption[]>([]);
   const [stations, setStations] = useState<StationOption[]>([]);
 
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [loadingRivers, setLoadingRivers] = useState(true);
   const [loadingStations, setLoadingStations] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [apiError, setApiError] = useState('');
 
+  // ─── Fetch Initial Data ─────────────────────────────────────────
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res: any = await apiCall(`/station-user/user/${userId}`);
+        const data = res?.data || res;
+        
+        setForm({
+          fullName: data.fullName || '',
+          email: data.userName || data.email || '',
+          password: '',
+          confirmPassword: '',
+          phoneNumber: '', // Not in response payload, default to empty
+          riverId: data.riverId || '',
+          stationId: data.stationId || '',
+        });
+      } catch (err) {
+        setApiError('Failed to load user details. They may have been deleted.');
+      } finally {
+        setLoadingInitial(false);
+      }
+    };
+    
+    if (userId) {
+      fetchUser();
+    }
+  }, [userId]);
+
   // ─── Fetch Rivers ───────────────────────────────────────────────
   useEffect(() => {
     const fetchRivers = async () => {
       try {
         const res: any = await apiCall('/river/drop-down-view');
-        if (res?.data) setRivers(res.data);
+        if (res?.data?.items) setRivers(res.data.items);
+        else if (Array.isArray(res?.data)) setRivers(res.data);
       } catch (err) {
         setApiError('Failed to load river list. Please refresh.');
       } finally {
@@ -73,39 +105,48 @@ export default function AddUserPage() {
     fetchRivers();
   }, []);
 
-  // ─── Fetch Stations (Improved Logic) ───────────────────────────
+  // ─── Fetch Stations ──────────────────────────────────────────────
   useEffect(() => {
-    // Reset stations if no river is selected
+    // We do NOT reset stationId unconditionally if we literally just loaded it from initialData
     if (!form.riverId) {
       setStations([]);
-      setForm(prev => ({ ...prev, stationId: '' }));
       return;
     }
 
     const fetchStations = async () => {
       setLoadingStations(true);
-      setApiError(''); // Clear previous errors
       try {
         const res: any = await apiCall(`/station/drop-down/get-by-river/${form.riverId}`);
-        // Handle empty station list silently (no error message)
-        setStations(res?.data || []);
+        const newStations = res?.data || [];
+        setStations(newStations);
+        
+        // Safety check to ensure current stationId belongs to the selected river, otherwise reset it
+        if (form.stationId) {
+          const isValid = newStations.some((s: any) => s.id === form.stationId);
+          if (!isValid && !loadingInitial) {
+            setForm(prev => ({ ...prev, stationId: '' }));
+          }
+        }
       } catch (err) {
-
+        // silent
       } finally {
         setLoadingStations(false);
       }
     };
 
     fetchStations();
-  }, [form.riverId]);
+  }, [form.riverId, loadingInitial]);
 
   // ─── Validation ────────────────────────────────────────────────
   const validate = (): boolean => {
     const e: FormErrors = {};
     if (!form.fullName.trim()) e.fullName = 'Full name is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email address';
-    if (form.password.length < 6) e.password = 'Minimum 6 characters required';
-    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email address';
+    
+    // Optional password when editing
+    if (form.password && form.password.length < 6) e.password = 'Minimum 6 characters required';
+    if (form.password && form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    
     if (!form.riverId) e.riverId = 'Please select a river';
     if (!form.stationId && stations.length > 0) e.stationId = 'Please select a station';
 
@@ -120,20 +161,27 @@ export default function AddUserPage() {
     setApiError('');
 
     try {
-      await apiCall('/user/create-user', {
+      const payload: any = {
+        fullName: form.fullName.trim(),
+        userName: form.email.trim(), 
+        stationId: form.stationId,
+        email: form.email.trim(),
+      };
+      
+      if (form.password) {
+        payload.password = form.password;
+      }
+      
+      // Call creating endpoint since the backend acts as an upsert/update depending on the ID
+      await apiCall(`/user/create-user?id=${userId}`, {
         method: 'POST',
-        body: JSON.stringify({
-          fullName: form.fullName.trim(),
-          userName: form.email.trim(), // Mapping email to userName as per your API requirement
-          password: form.password,
-          stationId: form.stationId,
-          email: form.email.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
+      
       setSubmitSuccess(true);
       setTimeout(() => router.push('/home/users'), 2000);
     } catch (err: any) {
-      setApiError(err.message || 'Failed to create user. Please try again.');
+      setApiError(err.message || 'Failed to update user. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -145,6 +193,17 @@ export default function AddUserPage() {
       ? 'border-destructive focus:ring-2 focus:ring-destructive/30'
       : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
     }`;
+
+  if (loadingInitial) {
+    return (
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <main className="flex-1 overflow-auto flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background">
@@ -175,8 +234,8 @@ export default function AddUserPage() {
                   <Users className="w-6 h-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-foreground">Add New User</h2>
-                  <p className="text-sm text-muted-foreground">Register a new system user and link them to a monitoring station.</p>
+                  <h2 className="text-lg font-bold text-foreground">Edit User</h2>
+                  <p className="text-sm text-muted-foreground">Update details for an existing system user.</p>
                 </div>
               </div>
             </div>
@@ -187,7 +246,7 @@ export default function AddUserPage() {
                   <CheckCircle className="w-10 h-10 text-green-500" />
                 </div>
                 <h3 className="text-xl font-bold text-foreground">Success!</h3>
-                <p className="text-muted-foreground">User has been created. Redirecting to user list...</p>
+                <p className="text-muted-foreground">User has been updated. Redirecting to user list...</p>
               </div>
             ) : (
               <div className="p-8 space-y-6">
@@ -227,7 +286,10 @@ export default function AddUserPage() {
 
                   {/* Password */}
                   <div className="space-y-1.5 relative">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Password</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
+                      <span>Password</span>
+                      <span className="text-[10px] text-muted-foreground/60">(Leave blank to keep current)</span>
+                    </label>
                     <div className="relative">
                       <input
                         type={showPassword ? "text" : "password"}
@@ -259,6 +321,7 @@ export default function AddUserPage() {
                         value={form.confirmPassword}
                         onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
                         placeholder="••••••••"
+                        disabled={!form.password} // Disable confirm password if no new password is typed
                       />
                       <button
                         type="button"
@@ -347,12 +410,12 @@ export default function AddUserPage() {
                     {submitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Creating...
+                        Saving...
                       </>
                     ) : (
                       <>
                         <Users className="w-4 h-4" />
-                        Create User Account
+                        Save Changes
                       </>
                     )}
                   </button>

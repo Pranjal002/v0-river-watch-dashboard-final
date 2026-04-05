@@ -124,7 +124,7 @@ export default function HomePage() {
 
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-border z-30">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border z-30 shadow-sm">
           <div className="flex items-center justify-between p-6 max-w-full">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
@@ -199,20 +199,25 @@ export default function HomePage() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Button className="h-20 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold" onClick={() => router.push('/home/stations')}>
+              <Button className="h-20 bg-[#0A7E92] hover:bg-[#097385] dark:bg-zinc-950 dark:hover:bg-zinc-900 border-0 dark:border dark:border-zinc-800 text-white font-semibold shadow-md transition-all duration-300" onClick={() => router.push('/home/stations')}>
                 <div className="flex flex-col items-center gap-2">
                   <MapPin className="w-5 h-5" />
                   <span>Add Station</span>
                 </div>
               </Button>
-              <Button className="h-20 bg-gradient-to-r from-secondary to-primary hover:from-secondary/90 hover:to-primary/90 text-white font-semibold"               onClick={() => router.push('/home/rivers')}
+              <Button 
+                onClick={() => router.push('/home/rivers')}
+                className="h-20 bg-[#0A7E92] hover:bg-[#097385] dark:bg-zinc-950 dark:hover:bg-zinc-900 border-0 dark:border dark:border-zinc-800 text-white font-semibold shadow-md transition-all duration-300"
               >
                 <div className="flex flex-col items-center gap-2">
                   <Waves className="w-5 h-5" />
                   <span>Add River</span>
                 </div>
               </Button>
-              <Button className="h-20 bg-gradient-to-r from-accent to-secondary hover:from-accent/90 hover:to-secondary/90 text-white font-semibold">
+              <Button 
+                onClick={() => router.push('/home/readings')}
+                className="h-20 bg-[#0A7E92] hover:bg-[#097385] dark:bg-zinc-950 dark:hover:bg-zinc-900 border-0 dark:border dark:border-zinc-800 text-white font-semibold shadow-md transition-all duration-300"
+              >
                 <div className="flex flex-col items-center gap-2">
                   <Droplet className="w-5 h-5" />
                   <span>Log Reading</span>
@@ -221,14 +226,14 @@ export default function HomePage() {
 
               {/* ── Add User Button ── */}
               <Button
-              onClick={() => router.push('/home/users/add')}
-              className="h-20 bg-gradient-to-r from-primary/70 to-accent/70 hover:from-primary/60 hover:to-accent/60 text-white font-semibold"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Users className="w-5 h-5" />
-                <span>Add User</span>
-              </div>
-            </Button>
+                onClick={() => router.push('/home/users/add')}
+                className="h-20 bg-[#0A7E92] hover:bg-[#097385] dark:bg-zinc-950 dark:hover:bg-zinc-900 border-0 dark:border dark:border-zinc-800 text-white font-semibold shadow-md transition-all duration-300"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  <span>Add User</span>
+                </div>
+              </Button>
             </div>
           </div>
 

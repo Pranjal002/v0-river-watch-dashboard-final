@@ -17,7 +17,7 @@ export async function apiCall<T>(
   options: RequestOptions = {}
 ): Promise<T> {
   const url = `${API_URL}${endpoint}`;
-  
+
   const defaultHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -102,6 +102,25 @@ export const userAPI = {
     });
   },
 
+  getPagedUsers: async (
+    pageNumber: number = 1,
+    pageSize: number = 10,
+    filters?: { riverId?: number | string; stationId?: number | string; fullName?: string }
+  ) => {
+    const params = new URLSearchParams();
+    if (filters?.riverId) params.append('riverId', filters.riverId.toString());
+    if (filters?.stationId) params.append('stationId', filters.stationId.toString());
+    if (filters?.fullName) params.append('fullName', filters.fullName);
+
+    const qs = params.toString();
+    const url = `/user/users${qs ? `?${qs}` : ''}`;
+
+    return apiCall(url, {
+      method: 'POST',
+      body: JSON.stringify({ pageNumber, pageSize }),
+    });
+  },
+
   create: async (userData: any) => {
     return apiCall('/users', {
       method: 'POST',
@@ -149,10 +168,10 @@ export const riverAPI = {
     });
   },
 
-  create: async (name: string, location: string, code:string) => {
+  create: async (name: string, location: string, code: string) => {
     return apiCall('/river', {
       method: 'POST',
-      body: JSON.stringify({ name, location , code}),
+      body: JSON.stringify({ name, location, code }),
     });
   },
 
@@ -163,8 +182,8 @@ export const riverAPI = {
     });
   },
 
-  delete: async (id: string) => {
-    return apiCall(`/rivers/${id}`, {
+  delete: async (id: string | number) => {
+    return apiCall(`/river/${id}`, {
       method: 'DELETE',
     });
   },
@@ -175,18 +194,18 @@ export const riverAPI = {
  */
 export const stationAPI = {
   getAll: async () => {
-    return apiCall('/stations', {
+    return apiCall('/station', {
       method: 'GET',
     });
   },
   getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
-    return apiCall(`/Station/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+    return apiCall(`/station/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
       method: 'GET',
     });
   },
 
   getById: async (id: string) => {
-    return apiCall(`/stations/${id}`, {
+    return apiCall(`/station/${id}`, {
       method: 'GET',
     });
   },
@@ -216,8 +235,8 @@ export const stationAPI = {
     });
   },
 
-  delete: async (id: string) => {
-    return apiCall(`/stations/${id}`, {
+  delete: async (id: string | number) => {
+    return apiCall(`/station/${id}`, {
       method: 'DELETE',
     });
   },
@@ -236,6 +255,18 @@ export const stationAPI = {
     return apiCall(`/stations/${stationId}/data`, {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+};
+
+/**
+ * Gauge Reading APIs
+ */
+export const gaugeReadingAPI = {
+  getByStationId: async (stationId: number | string, pageNumber: number = 1, pageSize: number = 10) => {
+    return apiCall(`/gauge-reading/station/${stationId}`, {
+      method: 'POST',
+      body: JSON.stringify({ pageNumber, pageSize }),
     });
   },
 };

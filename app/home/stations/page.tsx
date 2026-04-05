@@ -4,7 +4,17 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/sidebar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, MapPin } from 'lucide-react';
+import { Plus, MapPin, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import AddStationForm from '@/components/add-station-form';
 import { stationAPI } from '@/lib/api';
 
@@ -39,6 +49,8 @@ export default function StationsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteStationId, setDeleteStationId] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchStations();
@@ -49,7 +61,7 @@ export default function StationsPage() {
       setLoading(true);
       setError('');
       const response: StationResponse = await stationAPI.getPaged(1, 10);
-      
+
       if (response.data) {
         setStations(response.data.items || []);
         setTotalCount(response.data.totalCount || 0);
@@ -67,22 +79,36 @@ export default function StationsPage() {
     fetchStations(); // Refresh the list after adding a station
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteStationId) return;
+    try {
+      setIsDeleting(true);
+      await stationAPI.delete(deleteStationId);
+      fetchStations();
+    } catch (err) {
+      console.error('Failed to delete station:', err);
+    } finally {
+      setIsDeleting(false);
+      setDeleteStationId(null);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
 
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-border z-30">
+        <header className="sticky top-0 bg-background/80 backdrop-blur-md border-b border-border z-30 shadow-sm">
           <div className="flex items-center justify-between p-6">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Monitoring Stations</h1>
               <p className="text-muted-foreground mt-1">Manage water level monitoring stations</p>
             </div>
             {!showForm && (
-              <Button 
+              <Button
                 onClick={() => setShowForm(true)}
-                className="gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
               >
                 <Plus className="w-4 h-4" />
                 Add Station
@@ -105,7 +131,7 @@ export default function StationsPage() {
                 <Card className="p-8">
                   <div className="text-center text-destructive">
                     <p className="font-medium mb-4">{error}</p>
-                    <Button 
+                    <Button
                       onClick={fetchStations}
                       variant="outline"
                       className="gap-2"
@@ -124,9 +150,9 @@ export default function StationsPage() {
                     </div>
                     <p className="text-lg font-medium mb-2">No stations configured</p>
                     <p className="mb-4">Add monitoring stations to track water levels at specific locations</p>
-                    <Button 
+                    <Button
                       onClick={() => setShowForm(true)}
-                      className="gap-2 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white"
+                      className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
                     >
                       <Plus className="w-4 h-4" />
                       Create First Station
@@ -149,15 +175,15 @@ export default function StationsPage() {
                           <th className="px-6 py-4 text-left font-semibold text-foreground">Longitude</th>
                           <th className="px-6 py-4 text-left font-semibold text-foreground">Elevation</th>
                           <th className="px-6 py-4 text-left font-semibold text-foreground">Remarks</th>
+                          <th className="px-6 py-4 text-right font-semibold text-foreground">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {stations.map((station, index) => (
-                          <tr 
+                          <tr
                             key={station.id}
-                            className={`border-b border-border transition-colors hover:bg-muted/50 ${
-                              index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
-                            }`}
+                            className={`border-b border-border transition-colors hover:bg-muted/50 ${index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
+                              }`}
                           >
                             <td className="px-6 py-4 text-foreground font-medium">{station.id}</td>
                             <td className="px-6 py-4 text-foreground font-medium">{station.name}</td>
@@ -169,6 +195,16 @@ export default function StationsPage() {
                             <td className="px-6 py-4 text-foreground text-sm">{station.longitude}</td>
                             <td className="px-6 py-4 text-foreground text-sm">{station.elevation}</td>
                             <td className="px-6 py-4 text-foreground text-sm max-w-xs truncate">{station.remarks}</td>
+                            <td className="px-6 py-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteStationId(station.id)}
+                                className="hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -179,6 +215,30 @@ export default function StationsPage() {
             </>
           )}
         </div>
+
+        <AlertDialog open={deleteStationId !== null} onOpenChange={(open) => !open && setDeleteStationId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the station and remove its data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDeleteConfirm();
+                }}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
