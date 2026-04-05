@@ -3,7 +3,7 @@
  * Configure your backend API URL here
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
