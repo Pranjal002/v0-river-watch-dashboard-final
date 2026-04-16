@@ -100,7 +100,7 @@ export default function RiversPage() {
             {!showForm && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
+                className="gap-2 bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-zinc-950 dark:hover:bg-zinc-900 border border-[#008B9B] dark:border-zinc-800 shadow-md transition-all duration-300"
               >
                 <Plus className="w-4 h-4" />
                 Add River
@@ -144,7 +144,7 @@ export default function RiversPage() {
                     <p className="mb-4">Add your first river to get started monitoring water levels</p>
                     <Button
                       onClick={() => setShowForm(true)}
-                      className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
+                      className="gap-2 bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-zinc-950 dark:hover:bg-zinc-900 border border-[#008B9B] dark:border-zinc-800 shadow-md transition-all duration-300"
                     >
                       <Plus className="w-4 h-4" />
                       Create First River

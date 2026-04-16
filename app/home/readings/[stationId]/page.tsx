@@ -85,7 +85,30 @@ export default function StationReadingsPage() {
 
   const formatDateString = (isoString?: string) => {
     if (!isoString) return 'N/A';
+    
+    // Check if the string matches "YYYY-MM-DD HH:mm:ss.SSS" structure
+    // This directly parses the literal digits to prevent the browser from adding timezone offsets
+    const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2}):(\d{2})/);
+    if (match) {
+      const [ , year, month, day, hour, minute ] = match;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthStr = months[parseInt(month, 10) - 1];
+      
+      let h = parseInt(hour, 10);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      
+      const hStr = h.toString().padStart(2, '0');
+      const mStr = minute.padStart(2, '0');
+      
+      return `${monthStr} ${parseInt(day, 10)}, ${year} · ${hStr}:${mStr} ${ampm}`;
+    }
+
+    // Fallback if the regex doesn't match
     const dateObj = new Date(isoString);
+    if (isNaN(dateObj.getTime())) return 'N/A';
+    
     const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     return `${dateStr} · ${timeStr}`;

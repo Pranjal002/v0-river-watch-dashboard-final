@@ -108,7 +108,7 @@ export default function StationsPage() {
             {!showForm && (
               <Button
                 onClick={() => setShowForm(true)}
-                className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
+                className="gap-2 bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-zinc-950 dark:hover:bg-zinc-900 border border-[#008B9B] dark:border-zinc-800 shadow-md transition-all duration-300"
               >
                 <Plus className="w-4 h-4" />
                 Add Station
@@ -152,7 +152,7 @@ export default function StationsPage() {
                     <p className="mb-4">Add monitoring stations to track water levels at specific locations</p>
                     <Button
                       onClick={() => setShowForm(true)}
-                      className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
+                      className="gap-2 bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-zinc-950 dark:hover:bg-zinc-900 border border-[#008B9B] dark:border-zinc-800 shadow-md transition-all duration-300"
                     >
                       <Plus className="w-4 h-4" />
                       Create First Station

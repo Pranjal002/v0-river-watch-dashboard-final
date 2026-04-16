@@ -178,7 +178,7 @@ export default function UsersPage() {
             </div>
             <Button
               onClick={() => router.push('/home/users/add')}
-              className="gap-2 bg-zinc-950 hover:bg-zinc-900 text-white border border-zinc-800 shadow-md transition-all duration-300"
+              className="gap-2 bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-zinc-950 dark:hover:bg-zinc-900 border border-[#008B9B] dark:border-zinc-800 shadow-md transition-all duration-300"
             >
               <Plus className="w-4 h-4" />
               Add StationUser
@@ -244,7 +244,7 @@ export default function UsersPage() {
                 />
               </div>
 
-              <Button onClick={handleSearch} className="gap-2 w-full md:w-auto bg-primary text-primary-foreground min-w-[120px]">
+              <Button onClick={handleSearch} className="gap-2 w-full md:w-auto bg-[#008B9B] hover:bg-[#007A88] text-white dark:bg-primary dark:text-primary-foreground min-w-[120px]">
                 <Search className="w-4 h-4" />
                 Search
               </Button>
