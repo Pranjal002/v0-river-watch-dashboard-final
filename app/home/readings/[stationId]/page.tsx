@@ -142,7 +142,22 @@ export default function StationReadingsPage() {
       const response: any = await gaugeReadingAPI.getByStationId(stationIdStr, page, 10);
 
       if (response && response.data) {
-        const items = response.data.items || [];
+        let items = response.data.items || [];
+        
+        // Adjust imageCapturedOn by reducing 5 hours, 49 minutes, 6 seconds
+        items = items.map((item: any) => {
+          if (item.imageCapturedOn) {
+            const dateObj = new Date(item.imageCapturedOn);
+            if (!isNaN(dateObj.getTime())) {
+              // 5 hours + 49 minutes + 6 seconds in ms
+              const offsetMs = (5 * 60 * 60 * 1000) + (49 * 60 * 1000) + (6 * 1000);
+              dateObj.setTime(dateObj.getTime() - offsetMs);
+              return { ...item, imageCapturedOn: dateObj.toISOString() };
+            }
+          }
+          return item;
+        });
+
         setReadings(items);
         setPageData({
           totalCount: response.data.totalCount || 0,

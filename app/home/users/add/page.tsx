@@ -15,6 +15,10 @@ interface CreateUserForm {
   phoneNumber: string;
   riverId: number | '';
   stationId: number | '';
+  startTime: string;
+  endTime: string;
+  intervalMinutes: number | '';
+  effectiveFromDate: string;
 }
 
 interface FormErrors {
@@ -43,6 +47,10 @@ export default function AddUserPage() {
     phoneNumber: '',
     riverId: '',
     stationId: '',
+    startTime: '',
+    endTime: '',
+    intervalMinutes: '',
+    effectiveFromDate: '',
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -108,6 +116,10 @@ export default function AddUserPage() {
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
     if (!form.riverId) e.riverId = 'Please select a river';
     if (!form.stationId && stations.length > 0) e.stationId = 'Please select a station';
+    if (!form.startTime) e.startTime = 'Start time is required';
+    if (!form.endTime) e.endTime = 'End time is required';
+    if (!form.intervalMinutes) e.intervalMinutes = 'Interval minutes is required';
+    if (!form.effectiveFromDate) e.effectiveFromDate = 'Effective date is required';
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -128,6 +140,12 @@ export default function AddUserPage() {
           password: form.password,
           stationId: form.stationId,
           email: form.email.trim(),
+          readingIntervalDetails: {
+            startTime: form.startTime,
+            endTime: form.endTime,
+            intervalMinutes: Number(form.intervalMinutes),
+            effectiveFromDate: form.effectiveFromDate
+          }
         }),
       });
       setSubmitSuccess(true);
@@ -325,6 +343,66 @@ export default function AddUserPage() {
                         </div>
                       </div>
                       {errors.stationId && <p className="text-xs text-red-500">{errors.stationId}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reading Interval Details Section */}
+                <div className="pt-6 border-t border-border">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Reading Interval Details</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Start Time */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Start Time</label>
+                      <input
+                        type="time"
+                        className={inputCls(errors.startTime)}
+                        value={form.startTime}
+                        onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                      />
+                      {errors.startTime && <p className="text-xs text-red-500">{errors.startTime}</p>}
+                    </div>
+
+                    {/* End Time */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">End Time</label>
+                      <input
+                        type="time"
+                        className={inputCls(errors.endTime)}
+                        value={form.endTime}
+                        onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                      />
+                      {errors.endTime && <p className="text-xs text-red-500">{errors.endTime}</p>}
+                    </div>
+
+                    {/* Interval Minutes */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Interval (Minutes)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className={inputCls(errors.intervalMinutes)}
+                        value={form.intervalMinutes}
+                        onChange={(e) => setForm({ ...form, intervalMinutes: e.target.value ? Number(e.target.value) : '' })}
+                        placeholder="e.g. 60"
+                      />
+                      {errors.intervalMinutes && <p className="text-xs text-red-500">{errors.intervalMinutes}</p>}
+                    </div>
+                    
+                    {/* Effective From Date */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Effective From Date</label>
+                      <input
+                        type="date"
+                        className={inputCls(errors.effectiveFromDate)}
+                        value={form.effectiveFromDate}
+                        onChange={(e) => setForm({ ...form, effectiveFromDate: e.target.value })}
+                      />
+                      {errors.effectiveFromDate && <p className="text-xs text-red-500">{errors.effectiveFromDate}</p>}
                     </div>
                   </div>
                 </div>
