@@ -270,3 +270,48 @@ export const gaugeReadingAPI = {
     });
   },
 };
+
+/**
+ * Dashboard APIs
+ */
+export const dashboardAPI = {
+  getCompare: async (riverId: number | string, stationIds: string, fromDate: string, toDate: string) => {
+    const params = new URLSearchParams({
+      riverId: riverId.toString(),
+      stationIds,
+      fromDate,
+      toDate
+    });
+    return apiCall(`/DashBoard/compare?${params.toString()}`, {
+      method: 'GET'
+    });
+  },
+  exportExcel: async (riverId: number | string, stationIds: string, fromDate: string, toDate: string, advanced: boolean = false) => {
+    const params = new URLSearchParams({
+      riverId: riverId.toString(),
+      stationIds,
+      fromDate,
+      toDate,
+      advanced: advanced.toString()
+    });
+    
+    // We can't use apiCall because it assumes JSON response.
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
+    const url = `${API_URL}/DashBoard/compare/export-excel?${params.toString()}`;
+    
+    const headers: Record<string, string> = {};
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    
+    const response = await fetch(url, { headers });
+    if (!response.ok) {
+      throw new Error(`Failed to export data: ${response.status}`);
+    }
+    
+    return await response.blob();
+  }
+};

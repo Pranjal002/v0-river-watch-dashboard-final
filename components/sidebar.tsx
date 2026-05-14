@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Droplet, Users, Waves, Map, MapPin, LogOut, Menu, X, LayoutDashboard, Activity } from 'lucide-react';
+import { Droplet, Users, Waves, Map, MapPin, LogOut, Menu, X, LayoutDashboard, Activity, LineChart } from 'lucide-react';
 
 export default function Sidebar() {
   const router = useRouter();
@@ -119,6 +119,17 @@ export default function Sidebar() {
               </div>
             )}
           </div>
+
+          {/* Compare Data */}
+          <Link href="/home/compare">
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3 mt-1"
+            >
+              <LineChart className="w-4 h-4" />
+              <span>Compare Data</span>
+            </Button>
+          </Link>
         </div>
       </nav>
 

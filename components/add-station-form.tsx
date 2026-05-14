@@ -207,7 +207,7 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               value={formData.riverId}
               onChange={handleChange}
               disabled={loading || rivers.length === 0}
-              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
             >
               <option value="">Choose a river</option>
               {rivers.map((river) => (
@@ -283,7 +283,7 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
               placeholder="Enter any additional remarks"
               rows={4}
               disabled={loading}
-              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-md text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none disabled:opacity-50"
             />
           </div>
 
