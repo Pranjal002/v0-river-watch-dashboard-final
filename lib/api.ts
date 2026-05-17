@@ -2,8 +2,8 @@
  * API Client for RiverWatch
  * Configure your backend API URL here
  */
-//const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
+//const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
 
 interface RequestOptions extends RequestInit {
   headers?: Record<string, string>;
@@ -278,8 +278,8 @@ export const gaugeReadingAPI = {
     });
   },
   fetchImageAsUrl: async (imagePath: string) => {
-    //const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
+    //const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
     const url = `${API_URL}/gauge-reading/view-image?imagePath=${encodeURIComponent(imagePath)}`;
     const headers: Record<string, string> = {};
     if (typeof window !== 'undefined') {
@@ -322,8 +322,8 @@ export const dashboardAPI = {
     });
 
     // We can't use apiCall because it assumes JSON response.
-    //const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://riverapi-00ta.onrender.com/api';
+    //const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7265/api';
     const url = `${API_URL}/DashBoard/compare/export-excel?${params.toString()}`;
 
     const headers: Record<string, string> = {};
