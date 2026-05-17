@@ -216,21 +216,21 @@ export default function CompareDataPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto bg-background text-foreground">
-        <div className="max-w-5xl mx-auto p-12 w-full">
-          <h1 className="text-3xl font-bold mb-8 text-foreground">Compare Gauge Readings</h1>
-          <Card className="p-8 bg-card border-border mb-8">
-            <div className="space-y-8">
+        <div className="max-w-4xl mx-auto p-8 w-full">
+          <h1 className="text-2xl font-bold mb-6 text-foreground">Compare Gauge Readings</h1>
+          <Card className="p-6 bg-card border-border mb-6 shadow-sm">
+            <div className="space-y-6">
               {/* River Selection */}
               <div className="relative">
-                <div className="flex items-center gap-4 mb-3 text-muted-foreground">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 font-semibold text-primary-foreground">1</div>
-                  <h2 className="text-lg">Select River Basin</h2>
+                <div className="flex items-center gap-3 mb-2 text-muted-foreground">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 font-semibold text-primary-foreground text-xs">1</div>
+                  <h2 className="text-base font-medium">Select River Basin</h2>
                 </div>
                 <div className="pl-[2.2rem]">
                   <select
                     value={selectedRiverId}
                     onChange={(e) => handleRiverSelect(e.target.value)}
-                    className="w-full p-4 rounded-xl border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-lg font-medium shadow-sm transition-all"
+                    className="w-full p-3 rounded-lg border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-base shadow-sm transition-all"
                   >
                     <option value="" disabled className="text-muted-foreground">— Choose a river —</option>
                     {rivers.map(r => (
@@ -242,15 +242,15 @@ export default function CompareDataPage() {
 
               {/* Station Selection */}
               <div className="relative">
-                <div className={`flex items-center gap-4 mb-3 ${selectedRiverId ? 'text-muted-foreground' : 'text-muted-foreground'} transition-colors`}>
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold transition-colors ${selectedRiverId ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
-                  <h2 className="text-lg">Select Gauging Stations</h2>
+                <div className={`flex items-center gap-3 mb-2 ${selectedRiverId ? 'text-muted-foreground' : 'text-muted-foreground/60'} transition-colors`}>
+                  <div className={`flex items-center justify-center w-6 h-6 rounded-full font-semibold text-xs transition-colors ${selectedRiverId ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+                  <h2 className="text-base font-medium">Select Gauging Stations</h2>
                 </div>
                 <div className="pl-[2.2rem]">
                   {selectedRiverId && availableStations.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {availableStations.map(s => (
-                        <label key={s.id} className="flex items-center space-x-3 p-3 rounded-lg border border-border bg-input cursor-pointer hover:bg-accent/50 transition-colors">
+                        <label key={s.id} className="flex items-center space-x-3 p-2.5 rounded-lg border border-border bg-input cursor-pointer hover:bg-accent/50 transition-colors">
                           <input 
                             type="checkbox" 
                             className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 bg-background border-border" 
@@ -262,7 +262,7 @@ export default function CompareDataPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="w-full p-4 rounded-xl border border-border bg-input text-muted-foreground text-lg italic">
+                    <div className="w-full p-3 rounded-lg border border-border bg-input text-muted-foreground text-sm italic">
                       {selectedRiverId ? 'No stations available for this river.' : '— Select a river first —'}
                     </div>
                   )}
@@ -271,30 +271,30 @@ export default function CompareDataPage() {
 
               {/* Dates Selection */}
               <div className="relative">
-                <div className={`flex items-center gap-4 mb-3 ${selectedStationIds.length > 0 ? 'text-muted-foreground' : 'text-muted-foreground'} transition-colors`}>
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold transition-colors ${selectedStationIds.length > 0 ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
-                  <h2 className="text-lg">Select Date Range</h2>
+                <div className={`flex items-center gap-3 mb-2 ${selectedStationIds.length > 0 ? 'text-muted-foreground' : 'text-muted-foreground/60'} transition-colors`}>
+                  <div className={`flex items-center justify-center w-6 h-6 rounded-full font-semibold text-xs transition-colors ${selectedStationIds.length > 0 ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
+                  <h2 className="text-base font-medium">Select Date Range</h2>
                 </div>
                 <div className="pl-[2.2rem]">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">From Date</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1.5">From Date</label>
                       <input 
                         type="date" 
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
                         disabled={selectedStationIds.length === 0}
-                        className="w-full p-4 rounded-xl border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-lg font-medium shadow-sm transition-all disabled:opacity-40"
+                        className="w-full p-3 rounded-lg border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-base shadow-sm transition-all disabled:opacity-40"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">To Date</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1.5">To Date</label>
                       <input 
                         type="date" 
                         value={toDate}
                         onChange={(e) => setToDate(e.target.value)}
                         disabled={selectedStationIds.length === 0}
-                        className="w-full p-4 rounded-xl border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-lg font-medium shadow-sm transition-all disabled:opacity-40"
+                        className="w-full p-3 rounded-lg border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-base shadow-sm transition-all disabled:opacity-40"
                       />
                     </div>
                   </div>
@@ -307,11 +307,11 @@ export default function CompareDataPage() {
                 </div>
               )}
 
-              <div className="pt-8 flex justify-end">
+              <div className="pt-4 flex justify-end">
                 <Button
                   onClick={submitComparison}
                   disabled={!selectedRiverId || selectedStationIds.length === 0 || !fromDate || !toDate || loading}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-xl text-lg font-semibold min-w-40 transition-all opacity-100 disabled:opacity-50"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-semibold min-w-32 transition-all opacity-100 disabled:opacity-50"
                 >
                   {loading ? 'Loading...' : 'Compare Data'}
                 </Button>
@@ -324,9 +324,9 @@ export default function CompareDataPage() {
             <div className="space-y-8">
               {/* Individual Station Graphs */}
               {lines.map((line) => (
-                <Card key={`individual-${line.id}`} className="p-8 bg-card border-border">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-foreground">{line.name} Graph</h2>
+                <Card key={`individual-${line.id}`} className="p-6 bg-card border-border shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-foreground">{line.name} Graph</h2>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -379,8 +379,8 @@ export default function CompareDataPage() {
 
               {/* Comparison Graph */}
               {lines.length > 1 && (
-                <Card className="p-8 bg-card border-border">
-                  <h2 className="text-2xl font-bold mb-6 text-foreground">Comparison Graph</h2>
+                <Card className="p-6 bg-card border-border shadow-sm">
+                  <h2 className="text-lg font-bold mb-4 text-foreground">Comparison Graph</h2>
                   <div className="h-[500px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart

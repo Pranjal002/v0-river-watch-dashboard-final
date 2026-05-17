@@ -180,7 +180,7 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
   
     const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
       <div>
-        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+        <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
           {label}
         </label>
         {children}
@@ -189,17 +189,17 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
     );
   
     const inputCls = (hasError?: string) =>
-      `w-full px-3 py-2.5 rounded-lg border text-sm bg-white transition-all outline-none
+      `w-full px-3 py-2.5 rounded-lg border text-sm bg-background transition-all outline-none text-foreground
        ${hasError
-         ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-         : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10'
+         ? 'border-destructive focus:border-destructive focus:ring-2 focus:ring-destructive/20'
+         : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/10'
        }`;
   
     const selectCls = (hasError?: string) =>
-      `w-full px-3 py-2.5 rounded-lg border text-sm bg-white transition-all outline-none appearance-none cursor-pointer
+      `w-full px-3 py-2.5 rounded-lg border text-sm bg-background transition-all outline-none appearance-none cursor-pointer text-foreground
        ${hasError
-         ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
-         : 'border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/10'
+         ? 'border-destructive focus:border-destructive focus:ring-2 focus:ring-destructive/20'
+         : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/10'
        }`;
   
     // Prevent body scroll when modal is open
@@ -217,22 +217,22 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
         style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       >
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-border">
   
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-lg">
-                <Users className="w-4 h-4 text-white" />
+                <Users className="w-4 h-4 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-gray-800">Add New User</h2>
-                <p className="text-xs text-gray-400">Fill in the details to create a user</p>
+                <h2 className="text-base font-semibold text-foreground">Add New User</h2>
+                <p className="text-xs text-muted-foreground">Fill in the details to create a user</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -244,8 +244,8 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
               <div className="w-16 h-16 rounded-full bg-green-50 border-2 border-green-400 flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <p className="text-base font-semibold text-gray-700">User Created Successfully!</p>
-              <p className="text-sm text-gray-400">Closing…</p>
+              <p className="text-base font-semibold text-foreground">User Created Successfully!</p>
+              <p className="text-sm text-muted-foreground">Closing…</p>
             </div>
           ) : (
             <>
@@ -306,7 +306,7 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
                       />
                       <button
                         type="button"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowPassword(v => !v)}
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -325,7 +325,7 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
                       />
                       <button
                         type="button"
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowConfirm(v => !v)}
                       >
                         {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -336,16 +336,16 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
   
                 {/* Divider */}
                 <div className="flex items-center gap-3 py-1">
-                  <div className="flex-1 h-px bg-gray-100" />
-                  <span className="text-xs text-gray-400 uppercase tracking-wider">Station Assignment</span>
-                  <div className="flex-1 h-px bg-gray-100" />
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">Station Assignment</span>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
   
                 {/* River dropdown */}
                 <Field label="River" error={errors.riverId}>
                   <div className="relative">
                     {loadingRivers ? (
-                      <div className={selectCls() + ' flex items-center gap-2 text-gray-400'}>
+                      <div className={selectCls() + ' flex items-center gap-2 text-muted-foreground'}>
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Loading rivers…</span>
                       </div>
@@ -361,7 +361,7 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
                             <option key={r.id} value={r.id}>{r.name}</option>
                           ))}
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       </>
                     )}
                   </div>
@@ -371,11 +371,11 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
                 <Field label="Station" error={errors.stationId}>
                   <div className="relative">
                     {!form.riverId ? (
-                      <div className={selectCls() + ' text-gray-300 cursor-not-allowed'}>
+                      <div className={selectCls() + ' text-muted-foreground/50 cursor-not-allowed'}>
                         Select a river first
                       </div>
                     ) : loadingStations ? (
-                      <div className={selectCls() + ' flex items-center gap-2 text-gray-400'}>
+                      <div className={selectCls() + ' flex items-center gap-2 text-muted-foreground'}>
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Loading stations…</span>
                       </div>
@@ -394,7 +394,7 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
                             <option key={s.id} value={s.id}>{s.name}</option>
                           ))}
                         </select>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       </>
                     )}
                   </div>
@@ -402,12 +402,12 @@ export default function AddUserModal({ onClose, onSuccess }: { onClose: () => vo
               </div>
   
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
+              <div className="px-6 py-4 border-t border-border flex gap-3">
                 <button
                   onClick={onClose}
                   disabled={submitting}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 text-sm font-medium text-gray-600
-                             hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-sm font-medium text-muted-foreground
+                             hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>

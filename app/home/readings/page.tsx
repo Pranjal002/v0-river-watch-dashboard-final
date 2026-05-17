@@ -57,20 +57,20 @@ export default function ReadingsSelectionPage() {
     <div className="flex h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto bg-background text-foreground">
-        <div className="max-w-3xl mx-auto p-12 w-full">
-          <h1 className="text-3xl font-bold mb-8 text-foreground">View Gauge Readings</h1>
-          <Card className="p-8 bg-card border-border">
-            <div className="space-y-8">
+        <div className="max-w-xl mx-auto p-8 w-full">
+          <h1 className="text-2xl font-bold mb-6 text-foreground">View Gauge Readings</h1>
+          <Card className="p-6 bg-card border-border shadow-sm">
+            <div className="space-y-6">
               <div className="relative">
-                <div className="flex items-center gap-4 mb-3 text-muted-foreground">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 font-semibold text-primary-foreground">1</div>
-                  <h2 className="text-lg">Select River Basin</h2>
+                <div className="flex items-center gap-3 mb-2 text-muted-foreground">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 font-semibold text-primary-foreground text-xs">1</div>
+                  <h2 className="text-base font-medium">Select River Basin</h2>
                 </div>
                 <div className="pl-[2.2rem]">
                   <select
                     value={selectedRiverId}
                     onChange={(e) => handleRiverSelect(e.target.value)}
-                    className="w-full p-4 rounded-xl border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-lg font-medium shadow-sm transition-all"
+                    className="w-full p-3 rounded-lg border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring appearance-none text-foreground text-base shadow-sm transition-all"
                   >
                     <option value="" disabled className="text-muted-foreground">— Choose a river —</option>
                     {rivers.map(r => (
@@ -81,16 +81,16 @@ export default function ReadingsSelectionPage() {
               </div>
 
               <div className="relative">
-                <div className={`flex items-center gap-4 mb-3 ${selectedRiverId ? 'text-muted-foreground' : 'text-muted-foreground'} transition-colors`}>
-                  <div className={`flex items-center justify-center w-8 h-8 rounded-full font-semibold transition-colors ${selectedRiverId ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
-                  <h2 className="text-lg">Select Gauging Station</h2>
+                <div className={`flex items-center gap-3 mb-2 ${selectedRiverId ? 'text-muted-foreground' : 'text-muted-foreground/60'} transition-colors`}>
+                  <div className={`flex items-center justify-center w-6 h-6 rounded-full font-semibold text-xs transition-colors ${selectedRiverId ? 'bg-blue-600 text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+                  <h2 className="text-base font-medium">Select Gauging Station</h2>
                 </div>
                 <div className="pl-[2.2rem]">
                   <select
                     value={selectedStationId}
                     onChange={(e) => setSelectedStationId(e.target.value)}
                     disabled={!selectedRiverId}
-                    className="w-full p-4 rounded-xl border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 appearance-none text-foreground text-lg font-medium transition-all"
+                    className="w-full p-3 rounded-lg border border-border bg-input focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-40 appearance-none text-foreground text-base transition-all"
                   >
                     <option value="" disabled>— Select a river first —</option>
                     {availableStations.map(s => (
@@ -100,11 +100,11 @@ export default function ReadingsSelectionPage() {
                 </div>
               </div>
 
-              <div className="pt-8 flex justify-end">
+              <div className="pt-4 flex justify-end">
                 <Button
                   onClick={submitSelection}
                   disabled={!selectedStationId || loading}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 rounded-xl text-lg font-semibold min-w-40 transition-all opacity-100 disabled:opacity-50"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-lg text-sm font-semibold min-w-32 transition-all opacity-100 disabled:opacity-50"
                 >
                   View Readings
                 </Button>

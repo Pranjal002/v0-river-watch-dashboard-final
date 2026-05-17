@@ -5,9 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Image as ImageIcon, MapPin, Activity, Waves, MoveRight, MoveLeft, ArrowDown, X as CloseIcon } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, MapPin, Activity, Waves, MoveRight, MoveLeft, ArrowDown, X as CloseIcon, Calendar, Download } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { stationAPI, gaugeReadingAPI } from '@/lib/api';
+import { stationAPI, gaugeReadingAPI, dashboardAPI } from '@/lib/api';
 
 interface GaugeReading {
   id: number;
@@ -21,6 +21,11 @@ interface GaugeReading {
   readingTime: number;
   uploadedBy: string;
   uploadedOn: string;
+  slotDetails?: {
+    startTime: string;
+    endTime: string;
+    displayLabel: string;
+  };
 }
 
 interface PageData {
@@ -31,7 +36,7 @@ interface PageData {
 
 function SecureThumbnail({ imagePath, onClick }: { imagePath: string, onClick: () => void }) {
   return (
-    <div className="w-full md:w-[180px] bg-muted flex flex-col items-center justify-center border-r border-border min-h-[160px] md:min-h-full p-4 relative group shrink-0">
+    <div className="w-full md:w-[120px] bg-muted flex flex-col items-center justify-center border-r border-border min-h-[120px] md:min-h-full p-2 relative group shrink-0">
       {imagePath ? (
         <>
           <div className="absolute inset-0 bg-cover bg-center rounded-l-2xl filter contrast-125 transition-opacity duration-500" style={{ backgroundImage: `url(${imagePath})` }} />
@@ -50,7 +55,7 @@ function SecureThumbnail({ imagePath, onClick }: { imagePath: string, onClick: (
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-center justify-center text-gray-500 h-full">
+        <div className="flex flex-col items-center justify-center text-muted-foreground h-full">
           <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
           <span className="text-xs font-semibold">No Image</span>
         </div>
@@ -66,9 +71,13 @@ export default function StationReadingsPage() {
 
   const [stationName, setStationName] = useState('Loading...');
   const [riverName, setRiverName] = useState('Loading...');
+  const [riverId, setRiverId] = useState<number | null>(null);
 
   const [readings, setReadings] = useState<GaugeReading[]>([]);
   const [pageData, setPageData] = useState<PageData | null>(null);
+
+  const [fromDate, setFromDate] = useState<string>('');
+  const [toDate, setToDate] = useState<string>('');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -85,30 +94,30 @@ export default function StationReadingsPage() {
 
   const formatDateString = (isoString?: string) => {
     if (!isoString) return 'N/A';
-    
+
     // Check if the string matches "YYYY-MM-DD HH:mm:ss.SSS" structure
     // This directly parses the literal digits to prevent the browser from adding timezone offsets
     const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2}):(\d{2})/);
     if (match) {
-      const [ , year, month, day, hour, minute ] = match;
+      const [, year, month, day, hour, minute] = match;
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthStr = months[parseInt(month, 10) - 1];
-      
+
       let h = parseInt(hour, 10);
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12;
       if (h === 0) h = 12;
-      
+
       const hStr = h.toString().padStart(2, '0');
       const mStr = minute.padStart(2, '0');
-      
+
       return `${monthStr} ${parseInt(day, 10)}, ${year} · ${hStr}:${mStr} ${ampm}`;
     }
 
     // Fallback if the regex doesn't match
     const dateObj = new Date(isoString);
     if (isNaN(dateObj.getTime())) return 'N/A';
-    
+
     const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     return `${dateStr} · ${timeStr}`;
@@ -128,35 +137,38 @@ export default function StationReadingsPage() {
       if (station) {
         setStationName(station.name);
         setRiverName(station.riverName || station.river);
+        if (station.riverId) setRiverId(station.riverId);
       }
     } catch (e) {
       console.warn("Could not fetch explicit station details.", e);
     }
   };
 
-  const fetchReadings = async (page: number) => {
+  const fetchReadings = async (page: number, overrideFrom?: string, overrideTo?: string) => {
     try {
       setLoading(true);
       setError('');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      const response: any = await gaugeReadingAPI.getByStationId(stationIdStr, page, 10);
+
+      const from = overrideFrom !== undefined ? overrideFrom : fromDate;
+      const to = overrideTo !== undefined ? overrideTo : toDate;
+
+      const response: any = await gaugeReadingAPI.getByStationId(stationIdStr, page, 10, from, to);
 
       if (response && response.data) {
         let items = response.data.items || [];
-        
-        // Adjust imageCapturedOn by reducing 5 hours, 49 minutes, 6 seconds
-        items = items.map((item: any) => {
-          if (item.imageCapturedOn) {
-            const dateObj = new Date(item.imageCapturedOn);
-            if (!isNaN(dateObj.getTime())) {
-              // 5 hours + 49 minutes + 6 seconds in ms
-              const offsetMs = (5 * 60 * 60 * 1000) + (49 * 60 * 1000) + (6 * 1000);
-              dateObj.setTime(dateObj.getTime() - offsetMs);
-              return { ...item, imageCapturedOn: dateObj.toISOString() };
+
+        items = await Promise.all(items.map(async (item: any) => {
+          let updatedItem = { ...item };
+          if (item.imagePath) {
+            try {
+              updatedItem.imagePath = await gaugeReadingAPI.fetchImageAsUrl(item.imagePath);
+            } catch (e) {
+              console.error("Failed to load image for", item.id, e);
             }
           }
-          return item;
-        });
+          return updatedItem;
+        }));
 
         setReadings(items);
         setPageData({
@@ -175,13 +187,59 @@ export default function StationReadingsPage() {
       console.error('Failed to load readings:', err);
       setError('Failed to load gauge readings. Please try again.');
     } finally {
-      if (stationName === 'Loading...') setStationName('Unknown Station');
-      if (riverName === 'Loading...') setRiverName('Unknown River');
+      setStationName(prev => prev === 'Loading...' ? 'Unknown Station' : prev);
+      setRiverName(prev => prev === 'Loading...' ? 'Unknown River' : prev);
       setLoading(false);
     }
   };
 
   const totalPages = pageData ? Math.ceil(pageData.totalCount / pageData.pageSize) : 1;
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (!pageData) return pages;
+
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (pageData.pageNumber <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (pageData.pageNumber >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', pageData.pageNumber - 1, pageData.pageNumber, pageData.pageNumber + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (!riverId) {
+      alert("River ID is missing. Please wait for station details to load.");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const blob = await dashboardAPI.exportExcel(riverId, stationIdStr, fromDate, toDate, false);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${stationName.replace(/\s+/g, '_')}_readings_${fromDate}_to_${toDate}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export failed:', e);
+      alert('Failed to export data. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background">
@@ -189,31 +247,85 @@ export default function StationReadingsPage() {
       <main className="flex-1 overflow-auto bg-background text-foreground">
         <div className="max-w-4xl mx-auto p-12">
 
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <Button onClick={() => router.push('/home/readings')} variant="outline" className="gap-2 bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground rounded-full px-6 py-5 cursor-pointer z-10 relative">
-                <ChevronLeft className="w-5 h-5" /> Back
-              </Button>
+          <div className="flex flex-col gap-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button onClick={() => router.push('/home/readings')} variant="outline" className="gap-2 bg-transparent border-border text-foreground hover:bg-muted hover:text-foreground rounded-full px-6 py-5 cursor-pointer z-10 relative">
+                  <ChevronLeft className="w-5 h-5" /> Back
+                </Button>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-muted py-2 px-4 rounded-full text-blue-400 font-medium text-sm">
-                  <Waves className="w-4 h-4" /> {riverName}
-                </div>
-                <div className="flex items-center gap-2 bg-secondary py-2 px-4 rounded-full text-green-400 font-medium text-sm">
-                  <MapPin className="w-4 h-4" /> {stationName}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-muted py-2 px-4 rounded-full text-blue-400 font-medium text-sm">
+                    <Waves className="w-4 h-4" /> {riverName}
+                  </div>
+                  <div className="flex items-center gap-2 bg-secondary py-2 px-4 rounded-full text-green-400 font-medium text-sm">
+                    <MapPin className="w-4 h-4" /> {stationName}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="text-gray-400 font-medium">
-              {pageData && pageData.totalCount > 0 ? (
-                `Showing ${(pageData.pageNumber - 1) * pageData.pageSize + 1}–${Math.min(pageData.pageNumber * pageData.pageSize, pageData.totalCount)} of ${pageData.totalCount} records`
-              ) : '0 records found'}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-2">
+              <div className="text-muted-foreground font-medium text-sm">
+                {pageData && pageData.totalCount > 0 ? (
+                  <>Showing <span className="text-foreground font-bold">{((pageData.pageNumber - 1) * pageData.pageSize) + 1}–{Math.min(pageData.pageNumber * pageData.pageSize, pageData.totalCount)}</span> of <span className="text-foreground font-bold">{pageData.totalCount}</span></>
+                ) : '0 records found'}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative">
+                  <input
+                    type={fromDate ? "date" : "text"}
+                    placeholder="From"
+                    onFocus={(e) => (e.currentTarget.type = "date")}
+                    onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text" }}
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="w-[150px] h-[38px] px-3 bg-transparent border border-border rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-0" />
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={toDate ? "date" : "text"}
+                    placeholder="to"
+                    onFocus={(e) => (e.currentTarget.type = "date")}
+                    onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.type = "text" }}
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="w-[150px] h-[38px] px-3 bg-transparent border border-border rounded-md text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-0" />
+                </div>
+
+                <Button
+                  onClick={() => fetchReadings(1)}
+                  disabled={loading}
+                  variant="outline"
+                  className="h-[38px] px-5 rounded-full border-primary text-primary hover:bg-primary/5 hover:text-primary font-semibold text-sm ml-1"
+                >
+                  Apply Date Filter
+                </Button>
+
+                {(fromDate || toDate) && (
+                  <Button
+                    onClick={() => { setFromDate(''); setToDate(''); fetchReadings(1, '', ''); }}
+                    disabled={loading}
+                    variant="ghost"
+                    size="icon"
+                    className="h-[38px] w-[38px] text-muted-foreground hover:text-destructive rounded-full"
+                    title="Clear Filters"
+                  >
+                    <CloseIcon className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center py-20 text-gray-400 font-medium gap-3">
+            <div className="flex justify-center items-center py-20 text-muted-foreground font-medium gap-3">
               <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /> Fetching readings...
             </div>
           ) : error ? (
@@ -223,77 +335,41 @@ export default function StationReadingsPage() {
             </Card>
           ) : (
             <>
-              <div className="grid grid-cols-4 gap-4 mb-8">
-                <Card className="bg-muted border-border p-5 rounded-xl">
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Total readings</p>
-                  <p className="text-3xl font-semibold">{pageData?.totalCount || 0}</p>
-                </Card>
-                <Card className="bg-muted border-border p-5 rounded-xl">
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Page</p>
-                  <p className="text-3xl font-semibold">{pageData ? `${pageData.pageNumber} / ${totalPages}` : '0 / 0'}</p>
-                </Card>
-                <Card className="bg-muted border-border p-5 rounded-xl">
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Latest value</p>
-                  <p className="text-3xl font-semibold tracking-tight">{readings.length > 0 ? readings[0].readingValue : '-'}<span className="text-lg text-muted-foreground font-normal ml-2">m</span></p>
-                </Card>
-                <Card className="bg-muted border-border p-5 rounded-xl">
-                  <p className="text-sm text-muted-foreground font-medium mb-1">Station ID</p>
-                  <p className="text-3xl font-semibold">{stationIdStr}</p>
-                </Card>
-              </div>
-
               <div className="space-y-6">
                 {readings.map((reading) => (
-                  <Card key={reading.id} className="bg-card border-border rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-lg">
+                  <Card key={reading.id} className="bg-card border-border rounded-xl overflow-hidden flex flex-col md:flex-row shadow-sm">
                     <SecureThumbnail imagePath={reading.imagePath} onClick={() => handleViewImage(reading.imagePath)} />
 
-                    <div className="p-6 flex-1 flex flex-col justify-between relative">
+                    <div className="p-4 flex-1 flex flex-col justify-between relative">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="font-mono text-sm text-gray-400 font-semibold tracking-wide">ID #{reading.id}</div>
-                        <div className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 ${reading.readingTime === 2 ? 'bg-[#1b2f42] text-blue-400' : 'bg-[#3b2a22] text-[#eab308]'}`}>
-                          <div className={`w-2 h-2 rounded-full ${reading.readingTime === 2 ? 'bg-blue-400' : 'bg-[#eab308]'}`}></div>
-                          {reading.readingTime === 2 ? 'Afternoon' : reading.readingTime === 1 ? 'Morning' : 'Unknown'}
+                        <div className="font-mono text-xs text-muted-foreground font-semibold tracking-wide">ID #{reading.id}</div>
+                        <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 bg-[#1b2f42] text-blue-400">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                          {reading.slotDetails?.displayLabel || 'Unknown Slot'}
                         </div>
                       </div>
 
-                      <div className="text-5xl font-light mb-6 text-foreground tracking-tight">
-                        {reading.readingValue} <span className="text-xl text-muted-foreground font-medium">metres</span>
+                      <div className="text-3xl font-light mb-4 text-foreground tracking-tight flex items-baseline gap-2">
+                        {reading.readingValue} <span className="text-base text-muted-foreground font-medium">metres</span>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 pt-6 border-t border-border w-full">
-                        <div className="flex flex-col gap-5">
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">River</p>
-                            <p className="font-semibold text-gray-200">{reading.river || riverName}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">Uploaded on</p>
-                            <p className="font-semibold text-gray-200">{formatDateString(reading.uploadedOn)}</p>
-                          </div>
+                      <div className="flex flex-wrap gap-x-8 gap-y-4 pt-4 border-t border-border w-full">
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Image captured</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDateString(reading.imageCapturedOn)}</p>
                         </div>
-
-                        <div className="flex flex-col gap-5">
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">Station</p>
-                            <p className="font-semibold text-gray-200">{reading.station || stationName}</p>
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Uploaded on</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDateString(reading.uploadedOn)}</p>
+                        </div>
+                        <div className="flex items-center gap-3 mt-auto">
+                          <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-xs tracking-widest border border-border">
+                            {reading.uploadedBy ? reading.uploadedBy.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
                           </div>
-                        </div>
-
-                        <div className="flex flex-col gap-5">
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 mb-1">Image captured on</p>
-                            <p className="font-semibold text-gray-200">{formatDateString(reading.imageCapturedOn)}</p>
+                          <div className="leading-tight flex flex-col">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Uploaded by</p>
+                            <p className="text-sm font-semibold text-foreground">{reading.uploadedBy || 'System'}</p>
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="pt-6 mt-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-sm tracking-widest border border-border ring-[3px] ring-background shadow-inner">
-                          {reading.uploadedBy ? reading.uploadedBy.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
-                        </div>
-                        <div className="leading-tight">
-                          <p className="font-bold text-gray-200">{reading.uploadedBy || 'System'}</p>
-                          <p className="text-xs text-gray-500 font-medium">Uploaded by</p>
                         </div>
                       </div>
                     </div>
@@ -313,40 +389,60 @@ export default function StationReadingsPage() {
 
               {pageData && pageData.totalCount > 0 && (
                 <div className="flex items-center justify-between mt-10 pt-6 border-t border-border">
-                  <span className="text-muted-foreground font-medium">
-                    Showing {(pageData.pageNumber - 1) * pageData.pageSize + 1}–{Math.min(pageData.pageNumber * pageData.pageSize, pageData.totalCount)} of {pageData.totalCount}
+                  <span className="text-sm text-muted-foreground font-medium">
+                    Showing {(pageData.pageNumber - 1) * pageData.pageSize + 1} to {Math.min(pageData.pageNumber * pageData.pageSize, pageData.totalCount)} of {pageData.totalCount} results
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
                       onClick={() => fetchReadings(pageData.pageNumber - 1)}
                       disabled={pageData.pageNumber === 1 || loading}
-                      className="bg-transparent border-border text-foreground hover:bg-muted rounded-lg p-2 h-10 w-10 disabled:opacity-30"
+                      className="bg-transparent border-border text-foreground hover:bg-muted text-sm font-medium h-9 px-4 disabled:opacity-50"
                     >
-                      <MoveLeft className="w-4 h-4" />
+                      Previous
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="bg-transparent border-border text-foreground hover:bg-muted rounded-lg min-w-10 h-10 font-medium pointer-events-none"
-                    >
-                      {pageData.pageNumber}
-                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {getPageNumbers().map((pageNum, idx) => (
+                        pageNum === '...' ? (
+                          <span key={`ellipsis-${idx}`} className="px-3 py-2 text-sm text-muted-foreground">...</span>
+                        ) : (
+                          <Button
+                            key={`page-${pageNum}`}
+                            variant={pageData.pageNumber === pageNum ? "default" : "outline"}
+                            onClick={() => fetchReadings(pageNum as number)}
+                            disabled={loading}
+                            className={`h-9 w-9 p-0 text-sm font-medium ${pageData.pageNumber === pageNum ? 'bg-primary text-primary-foreground border-transparent' : 'bg-transparent border-border text-foreground hover:bg-muted'}`}
+                          >
+                            {pageNum}
+                          </Button>
+                        )
+                      ))}
+                    </div>
                     <Button
                       variant="outline"
                       onClick={() => fetchReadings(pageData.pageNumber + 1)}
                       disabled={pageData.pageNumber >= totalPages || loading}
-                      className="bg-transparent border-border text-foreground hover:bg-muted rounded-lg p-2 h-10 w-10 disabled:opacity-30"
+                      className="bg-transparent border-border text-foreground hover:bg-muted text-sm font-medium h-9 px-4 disabled:opacity-50"
                     >
-                      <MoveRight className="w-4 h-4" />
+                      Next
                     </Button>
                   </div>
                 </div>
               )}
 
               <div className="mt-12 flex justify-center pb-12">
-                <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted hover:text-foreground transition-colors">
-                  <ArrowDown className="w-5 h-5 opacity-70" />
-                </div>
+                <Button
+                  onClick={handleExportExcel}
+                  disabled={exporting || loading}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-full px-8 py-6 flex items-center gap-2 shadow-lg shadow-green-600/20 text-md font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  {exporting ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Download className="w-5 h-5" />
+                  )}
+                  {exporting ? 'Exporting...' : 'Export to Excel'}
+                </Button>
               </div>
             </>
           )}
