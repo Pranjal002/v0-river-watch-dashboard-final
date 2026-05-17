@@ -5,8 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Image as ImageIcon, MapPin, Activity, Waves, MoveRight, MoveLeft, ArrowDown, X as CloseIcon, Calendar, Download } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, MapPin, Activity, Waves, MoveRight, MoveLeft, ArrowDown, X as CloseIcon, Calendar, Download, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { stationAPI, gaugeReadingAPI, dashboardAPI } from '@/lib/api';
 
 interface GaugeReading {
@@ -21,6 +22,8 @@ interface GaugeReading {
   readingTime: number;
   uploadedBy: string;
   uploadedOn: string;
+  actualDateToUpload?: string;
+  actualDatetoUpload?: string;
   slotDetails?: {
     startTime: string;
     endTime: string;
@@ -92,11 +95,9 @@ export default function StationReadingsPage() {
     setViewingImageObjectUrl(null);
   };
 
-  const formatDateString = (isoString?: string) => {
-    if (!isoString) return 'N/A';
+  const formatDateParts = (isoString?: string): { date: string; time: string } => {
+    if (!isoString) return { date: 'N/A', time: '' };
 
-    // Check if the string matches "YYYY-MM-DD HH:mm:ss.SSS" structure
-    // This directly parses the literal digits to prevent the browser from adding timezone offsets
     const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})[\sT](\d{2}):(\d{2}):(\d{2})/);
     if (match) {
       const [, year, month, day, hour, minute] = match;
@@ -108,19 +109,65 @@ export default function StationReadingsPage() {
       h = h % 12;
       if (h === 0) h = 12;
 
-      const hStr = h.toString().padStart(2, '0');
-      const mStr = minute.padStart(2, '0');
-
-      return `${monthStr} ${parseInt(day, 10)}, ${year} · ${hStr}:${mStr} ${ampm}`;
+      return {
+        date: `${monthStr} ${parseInt(day, 10)}, ${year}`,
+        time: `${h.toString().padStart(2, '0')}:${minute.padStart(2, '0')} ${ampm}`,
+      };
     }
 
-    // Fallback if the regex doesn't match
     const dateObj = new Date(isoString);
-    if (isNaN(dateObj.getTime())) return 'N/A';
+    if (isNaN(dateObj.getTime())) return { date: 'N/A', time: '' };
 
-    const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    return `${dateStr} · ${timeStr}`;
+    return {
+      date: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    };
+  };
+
+  const getStatusFlag = (reading: GaugeReading): { type: 'NORMAL' | 'MISMATCH' | 'LATE'; message: string } => {
+    const actualDate = reading.actualDateToUpload || reading.actualDatetoUpload || (reading.uploadedOn ? reading.uploadedOn.split('T')[0] : (reading.imageCapturedOn ? reading.imageCapturedOn.split('T')[0] : ''));
+    if (!actualDate || !reading.slotDetails || !reading.imageCapturedOn) {
+      return { type: 'NORMAL', message: '' };
+    }
+
+    const slot = reading.slotDetails;
+    if (!slot.startTime || !slot.endTime) {
+      return { type: 'NORMAL', message: '' };
+    }
+
+    const normalizeDateTime = (dateStr: string, timeStr: string) => {
+      const cleanDate = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr.includes(' ') ? dateStr.split(' ')[0] : dateStr;
+      let cleanTime = timeStr.includes('T') ? timeStr.split('T')[1] : timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr;
+      cleanTime = cleanTime.split('.')[0].replace('Z', '');
+      const parts = cleanTime.split(':');
+      const h = parts[0]?.padStart(2, '0') || '00';
+      const m = parts[1]?.padStart(2, '0') || '00';
+      const s = parts[2]?.padStart(2, '0') || '00';
+      return `${cleanDate}T${h}:${m}:${s}`;
+    };
+
+    const normCaptured = normalizeDateTime(reading.imageCapturedOn, reading.imageCapturedOn);
+    const normSlotStart = normalizeDateTime(actualDate, slot.startTime);
+    const normSlotEnd = normalizeDateTime(actualDate, slot.endTime);
+
+    if (normCaptured < normSlotStart || normCaptured > normSlotEnd) {
+      return {
+        type: 'MISMATCH',
+        message: 'User uploaded image time does not match with allocated date/time'
+      };
+    }
+
+    if (reading.uploadedOn) {
+      const normUploaded = normalizeDateTime(reading.uploadedOn, reading.uploadedOn);
+      if (normUploaded > normSlotEnd) {
+        return {
+          type: 'LATE',
+          message: 'Late upload'
+        };
+      }
+    }
+
+    return { type: 'NORMAL', message: 'Verified on-time capture & upload' };
   };
 
   useEffect(() => {
@@ -336,18 +383,58 @@ export default function StationReadingsPage() {
           ) : (
             <>
               <div className="space-y-6">
-                {readings.map((reading) => (
-                  <Card key={reading.id} className="bg-card border-border rounded-xl overflow-hidden flex flex-col md:flex-row shadow-sm">
-                    <SecureThumbnail imagePath={reading.imagePath} onClick={() => handleViewImage(reading.imagePath)} />
+                {readings.map((reading) => {
+                  const statusFlag = getStatusFlag(reading);
+                  return (
+                    <Card key={reading.id} className="bg-card border-border rounded-xl overflow-hidden flex flex-col md:flex-row shadow-sm">
+                      <SecureThumbnail imagePath={reading.imagePath} onClick={() => handleViewImage(reading.imagePath)} />
 
-                    <div className="p-4 flex-1 flex flex-col justify-between relative">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-mono text-xs text-muted-foreground font-semibold tracking-wide">ID #{reading.id}</div>
-                        <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 bg-[#1b2f42] text-blue-400">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
-                          {reading.slotDetails?.displayLabel || 'Unknown Slot'}
+                      <div className="p-4 flex-1 flex flex-col justify-between relative">
+                        <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
+                          <div className="font-mono text-xs text-muted-foreground font-semibold tracking-wide mt-1">ID #{reading.id}</div>
+                          <div className="flex flex-col items-end gap-1.5">
+                            <div className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 bg-[#1b2f42] text-blue-400 shrink-0">
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                              {reading.slotDetails?.displayLabel || 'Unknown Slot'}
+                            </div>
+                            {statusFlag.type === 'MISMATCH' && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-destructive/15 text-destructive cursor-pointer hover:bg-destructive/25 transition-colors border border-destructive/20 shadow-sm animate-in fade-in duration-300" title={statusFlag.message}>
+                                    <AlertCircle className="w-4 h-4" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="bg-destructive text-destructive-foreground font-medium text-xs shadow-lg p-2 max-w-[250px]">
+                                  <p>{statusFlag.message}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {statusFlag.type === 'LATE' && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-500/15 text-amber-500 cursor-pointer hover:bg-amber-500/25 transition-colors border border-amber-500/20 shadow-sm animate-in fade-in duration-300" title={statusFlag.message}>
+                                    <Clock className="w-4 h-4" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="bg-amber-500 text-black font-semibold text-xs shadow-lg p-2 max-w-[250px]">
+                                  <p>{statusFlag.message}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {statusFlag.type === 'NORMAL' && statusFlag.message && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-500 cursor-pointer hover:bg-emerald-500/25 transition-colors border border-emerald-500/20 shadow-sm animate-in fade-in duration-300" title={statusFlag.message}>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="bg-emerald-500 text-black font-semibold text-xs shadow-lg p-2 max-w-[250px]">
+                                  <p>{statusFlag.message}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
                       <div className="text-3xl font-light mb-4 text-foreground tracking-tight flex items-baseline gap-2">
                         {reading.readingValue} <span className="text-base text-muted-foreground font-medium">metres</span>
@@ -356,11 +443,13 @@ export default function StationReadingsPage() {
                       <div className="flex flex-wrap gap-x-8 gap-y-4 pt-4 border-t border-border w-full">
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-1">Image captured</p>
-                          <p className="text-sm font-semibold text-foreground">{formatDateString(reading.imageCapturedOn)}</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDateParts(reading.imageCapturedOn).date}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">{formatDateParts(reading.imageCapturedOn).time}</p>
                         </div>
                         <div>
                           <p className="text-xs font-medium text-muted-foreground mb-1">Uploaded on</p>
-                          <p className="text-sm font-semibold text-foreground">{formatDateString(reading.uploadedOn)}</p>
+                          <p className="text-sm font-semibold text-foreground">{formatDateParts(reading.uploadedOn).date}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">{formatDateParts(reading.uploadedOn).time}</p>
                         </div>
                         <div className="flex items-center gap-3 mt-auto">
                           <div className="w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center font-bold text-xs tracking-widest border border-border">
@@ -374,7 +463,8 @@ export default function StationReadingsPage() {
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
 
                 {readings.length === 0 && !loading && (
                   <div className="py-20 text-center flex flex-col items-center">

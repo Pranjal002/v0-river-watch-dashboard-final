@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Users, ArrowLeft, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { apiCall } from '@/lib/api';
 import Sidebar from '@/components/sidebar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // ─── Types ────────────────────────────────────────────────────────
 interface EditUserForm {
@@ -34,6 +35,66 @@ interface StationOption {
   id: number;
   name: string;
 }
+
+const TimeDropdown = ({ value, onChange, hasError }: { value: string, onChange: (v: string) => void, hasError?: string }) => {
+  let h24 = 0;
+  let min = 0;
+  
+  if (value) {
+    const parts = value.split(':');
+    h24 = parseInt(parts[0], 10) || 0;
+    min = parseInt(parts[1], 10) || 0;
+  }
+
+  const ampm = value ? (h24 >= 12 ? 'PM' : 'AM') : 'AM';
+  const hour12 = value ? (h24 % 12 === 0 ? 12 : h24 % 12) : 12;
+
+  const updateTime = (h: number, m: number, ap: string) => {
+    let newH24 = h;
+    if (ap === 'PM' && h < 12) newH24 += 12;
+    if (ap === 'AM' && h === 12) newH24 = 0;
+    onChange(`${newH24.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`);
+  };
+
+  const borderCls = hasError 
+    ? 'border-destructive focus-within:ring-destructive/30' 
+    : 'border-border focus-within:border-primary focus-within:ring-primary/20';
+
+  return (
+    <div className={`flex items-center gap-1 w-full px-1 py-1 rounded-lg border text-sm bg-input transition-all duration-200 focus-within:ring-2 ${borderCls}`}>
+      <Select value={value ? String(hour12) : undefined} onValueChange={v => updateTime(parseInt(v), value ? min : 0, ampm)}>
+        <SelectTrigger className="border-none shadow-none h-8 px-3 bg-transparent focus:ring-0 flex-1 min-w-[70px]">
+          <SelectValue placeholder="HH" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({length: 12}, (_, i) => i + 1).map(h => (
+            <SelectItem key={h} value={String(h)}>{h.toString().padStart(2, '0')}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <span className="text-muted-foreground font-bold">:</span>
+      <Select value={value ? String(min) : undefined} onValueChange={v => updateTime(value ? hour12 : 12, parseInt(v), ampm)}>
+        <SelectTrigger className="border-none shadow-none h-8 px-3 bg-transparent focus:ring-0 flex-1 min-w-[70px]">
+          <SelectValue placeholder="MM" />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({length: 60}, (_, i) => i).map(m => (
+            <SelectItem key={m} value={String(m)}>{m.toString().padStart(2, '0')}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select value={value ? ampm : 'AM'} onValueChange={v => updateTime(value ? hour12 : 12, value ? min : 0, v)}>
+        <SelectTrigger className="border-none shadow-none h-8 px-3 bg-muted hover:bg-muted/80 focus:ring-0 flex-1 min-w-[75px]">
+          <SelectValue placeholder="AM/PM" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="AM">AM</SelectItem>
+          <SelectItem value="PM">PM</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -368,17 +429,18 @@ export default function EditUserPage() {
                     {/* River Selector */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">River</label>
-                      <div className="relative">
-                        <select
-                          className={inputCls(errors.riverId)}
-                          value={form.riverId}
-                          disabled={loadingRivers}
-                          onChange={(e) => setForm({ ...form, riverId: e.target.value ? Number(e.target.value) : '', stationId: '' })}
-                        >
-                          <option value="" className="text-muted-foreground">Select River</option>
-                          {rivers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                        </select>
-                      </div>
+                      <Select 
+                        value={form.riverId ? String(form.riverId) : undefined} 
+                        disabled={loadingRivers}
+                        onValueChange={(v) => setForm({ ...form, riverId: Number(v), stationId: '' })}
+                      >
+                        <SelectTrigger className={inputCls(errors.riverId)}>
+                          <SelectValue placeholder="Select River" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {rivers.map(r => <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       {errors.riverId && <p className="text-xs text-red-500">{errors.riverId}</p>}
                     </div>
 
@@ -386,28 +448,23 @@ export default function EditUserPage() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Station</label>
                       <div className="relative">
-                        <select
-                          className={inputCls(errors.stationId)}
-                          value={form.stationId}
+                        <Select 
+                          value={form.stationId ? String(form.stationId) : undefined} 
                           disabled={!form.riverId || loadingStations || (stations.length === 0 && !loadingStations)}
-                          onChange={(e) => setForm({ ...form, stationId: e.target.value ? Number(e.target.value) : '' })}
+                          onValueChange={(v) => setForm({ ...form, stationId: Number(v) })}
                         >
-                          {!form.riverId ? (
-                            <option value="" className="text-muted-foreground">Select a river first</option>
-                          ) : loadingStations ? (
-                            <option value="" className="text-muted-foreground">Loading stations...</option>
-                          ) : stations.length === 0 ? (
-                            <option value="" className="text-muted-foreground">No stations available</option>
-                          ) : (
-                            <>
-                              <option value="" className="text-muted-foreground">Select Station</option>
-                              {stations.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </>
-                          )}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                          {loadingStations && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                        </div>
+                          <SelectTrigger className={inputCls(errors.stationId)}>
+                            <SelectValue placeholder={!form.riverId ? "Select a river first" : loadingStations ? "Loading stations..." : stations.length === 0 ? "No stations available" : "Select Station"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stations.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        {loadingStations && (
+                          <div className="absolute right-8 top-1/2 -translate-y-1/2 flex items-center">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          </div>
+                        )}
                       </div>
                       {errors.stationId && <p className="text-xs text-red-500">{errors.stationId}</p>}
                     </div>
@@ -425,11 +482,10 @@ export default function EditUserPage() {
                     {/* Start Time */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Start Time</label>
-                      <input
-                        type="time"
-                        className={inputCls(errors.startTime)}
-                        value={form.startTime}
-                        onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                      <TimeDropdown 
+                        value={form.startTime} 
+                        onChange={(v) => setForm({ ...form, startTime: v })} 
+                        hasError={errors.startTime} 
                       />
                       {errors.startTime && <p className="text-xs text-red-500">{errors.startTime}</p>}
                     </div>
@@ -437,11 +493,10 @@ export default function EditUserPage() {
                     {/* End Time */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">End Time</label>
-                      <input
-                        type="time"
-                        className={inputCls(errors.endTime)}
-                        value={form.endTime}
-                        onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                      <TimeDropdown 
+                        value={form.endTime} 
+                        onChange={(v) => setForm({ ...form, endTime: v })} 
+                        hasError={errors.endTime} 
                       />
                       {errors.endTime && <p className="text-xs text-red-500">{errors.endTime}</p>}
                     </div>
