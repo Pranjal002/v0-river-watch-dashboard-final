@@ -134,7 +134,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-sidebar-border/30">
+      <div className="p-4 border-t border-sidebar-border/30 flex flex-col gap-4">
         <Button
           onClick={handleLogout}
           className="w-full justify-center gap-2 bg-destructive/80 hover:bg-destructive text-white"
@@ -142,6 +142,12 @@ export default function Sidebar() {
           <LogOut className="w-4 h-4" />
           Logout
         </Button>
+        <div className="text-center text-xs text-sidebar-foreground/60 space-y-1.5 mt-2">
+          <p className="font-medium text-sidebar-foreground/70">
+            &copy; {new Date().getFullYear()} Innovative Engineering Services Pvt. Ltd.
+          </p>
+
+        </div>
       </div>
     </div>
   );

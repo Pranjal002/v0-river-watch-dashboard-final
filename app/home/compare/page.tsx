@@ -183,9 +183,9 @@ export default function CompareDataPage() {
     }
   };
 
-  const handleExportExcel = async (stationId: string, stationName: string) => {
+  const handleExportExcel = async (stationIds: string, stationName: string) => {
     try {
-      const blob = await dashboardAPI.exportExcel(selectedRiverId, stationId, fromDate, toDate, false);
+      const blob = await dashboardAPI.exportExcel(selectedRiverId, stationIds, fromDate, toDate, false);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -442,13 +442,31 @@ export default function CompareDataPage() {
                       <h3 className="font-semibold text-foreground">Overlay View</h3>
                       <p className="text-xs text-muted-foreground">{selectedRiverObj?.name} River · {activeStations.length} stations</p>
                     </div>
-                    <div className="flex gap-4 flex-wrap">
-                      {activeStations.map((st, i) => (
-                        <div key={st.id} className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATION_COLORS[i % STATION_COLORS.length] }} />
-                          <span className="text-xs font-medium text-muted-foreground">{st.name.split(" ")[0]}</span>
-                        </div>
-                      ))}
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleExportExcel(selectedStationIds.join(','), 'Combined_Stations')}
+                        className="h-8 gap-2 text-xs"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Export All
+                      </Button>
+                      <div className="flex gap-4 flex-wrap border-l border-border pl-4">
+                        {activeStations.map((st, i) => (
+                          <div key={st.id} className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATION_COLORS[i % STATION_COLORS.length] }} />
+                            <span className="text-xs font-medium text-muted-foreground">{st.name.split(" ")[0]}</span>
+                            <button
+                              onClick={() => handleExportExcel(st.id.toString(), st.name)}
+                              className="text-muted-foreground hover:text-foreground ml-0.5"
+                              title={`Export ${st.name}`}
+                            >
+                              <Download className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
