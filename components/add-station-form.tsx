@@ -121,13 +121,13 @@ export default function AddStationForm({ onBack }: AddStationFormProps) {
         <h2 className="text-2xl font-bold text-foreground mb-6">Add New Station</h2>
 
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-md text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md text-green-700">
+          <div className="mb-4 p-4 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded-md text-green-700 dark:text-green-400">
             {success}
           </div>
         )}
