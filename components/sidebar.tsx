@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Droplet, Users, Waves, Map, MapPin, LogOut, Menu, X, LayoutDashboard, Activity, LineChart } from 'lucide-react';
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [expandedRiver, setExpandedRiver] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -17,8 +17,9 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  const toggleRiverMenu = () => {
-    setExpandedRiver(!expandedRiver);
+  const isActive = (path: string) => {
+    if (path === '/home') return pathname === '/home';
+    return pathname?.startsWith(path);
   };
 
   const SidebarContent = () => (
@@ -40,7 +41,11 @@ export default function Sidebar() {
           <Link href="/home">
             <Button
               variant="ghost"
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3"
+              className={`w-full justify-start gap-3 ${
+                isActive('/home')
+                  ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+              }`}
             >
               <LayoutDashboard className="w-4 h-4" />
               <span>Dashboard</span>
@@ -51,7 +56,11 @@ export default function Sidebar() {
           <Link href="/home/readings">
             <Button
               variant="ghost"
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3"
+              className={`w-full justify-start gap-3 ${
+                isActive('/home/readings')
+                  ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+              }`}
             >
               <Activity className="w-4 h-4" />
               <span>View Gauge Readings</span>
@@ -62,7 +71,11 @@ export default function Sidebar() {
           <Link href="/home/users">
             <Button
               variant="ghost"
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3"
+              className={`w-full justify-start gap-3 ${
+                isActive('/home/users')
+                  ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+              }`}
             >
               <Users className="w-4 h-4" />
               <span>User Management</span>
@@ -71,60 +84,53 @@ export default function Sidebar() {
 
           {/* River Management */}
           <div>
-            <button
-              onClick={toggleRiverMenu}
-              className="w-full flex items-center justify-between px-3 py-2 text-sidebar-foreground hover:bg-sidebar-accent/20 rounded-md text-sm font-medium transition-colors"
-            >
+            <div className="w-full flex items-center justify-between px-3 py-2 text-sidebar-foreground font-medium text-sm">
               <div className="flex items-center gap-3">
                 <Waves className="w-4 h-4" />
                 <span>River Management</span>
               </div>
-              <svg
-                className={`w-4 h-4 transition-transform ${expandedRiver ? 'rotate-180' : ''
-                  }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                />
-              </svg>
-            </button>
+            </div>
 
-            {/* River Management Submenu */}
-            {expandedRiver && (
-              <div className="ml-4 mt-2 space-y-1">
-                <Link href="/home/rivers">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3 text-sm pl-6"
-                  >
-                    <Map className="w-4 h-4" />
-                    <span>Rivers</span>
-                  </Button>
-                </Link>
-                <Link href="/home/stations">
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3 text-sm pl-6"
-                  >
-                    <MapPin className="w-4 h-4" />
-                    <span>Stations</span>
-                  </Button>
-                </Link>
-              </div>
-            )}
+            {/* River Management Submenu - Always opened */}
+            <div className="ml-4 mt-1 space-y-1">
+              <Link href="/home/rivers">
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start gap-3 text-sm pl-6 ${
+                    isActive('/home/rivers')
+                      ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+                  }`}
+                >
+                  <Map className="w-4 h-4" />
+                  <span>Rivers</span>
+                </Button>
+              </Link>
+              <Link href="/home/stations">
+                <Button
+                  variant="ghost"
+                  className={`w-full justify-start gap-3 text-sm pl-6 ${
+                    isActive('/home/stations')
+                      ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+                  }`}
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>Stations</span>
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Compare Data */}
           <Link href="/home/compare">
             <Button
               variant="ghost"
-              className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground gap-3 mt-1"
+              className={`w-full justify-start gap-3 mt-1 ${
+                isActive('/home/compare')
+                  ? 'bg-sidebar-accent/30 text-sidebar-accent-foreground font-semibold'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-accent-foreground'
+              }`}
             >
               <LineChart className="w-4 h-4" />
               <span>Compare Data</span>

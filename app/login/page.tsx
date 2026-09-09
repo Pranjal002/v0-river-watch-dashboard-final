@@ -104,13 +104,6 @@ const styles = `
   .eye-btn:hover { color: var(--cyan); background: rgba(0,212,255,0.08); }
   .error-msg { font-size: 12px; color: var(--error); margin-top: 6px; display: flex; align-items: center; gap: 5px; animation: fadeIn 0.2s ease; }
 
-  .options-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-  .remember-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-  .remember-checkbox { width: 16px; height: 16px; accent-color: var(--cyan); cursor: pointer; }
-  .remember-label { font-size: 13px; color: var(--slate); cursor: pointer; user-select: none; }
-  .forgot-link { font-size: 13px; color: var(--cyan-dim); text-decoration: none; background: none; border: none; cursor: pointer; transition: color 0.2s; font-family: 'Outfit', sans-serif; }
-  .forgot-link:hover { color: var(--cyan); }
-
   .login-btn {
     width: 100%; padding: 15px; border: none; border-radius: 12px; cursor: pointer;
     font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
@@ -186,7 +179,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -197,7 +189,7 @@ export default function LoginPage() {
     const el = document.createElement("style");
     el.textContent = styles;
     document.head.appendChild(el);
-    return () => document.head.removeChild(el);
+    return () => { document.head.removeChild(el); };
   }, []);
 
   const validate = () => {
@@ -336,7 +328,7 @@ export default function LoginPage() {
           </div>
 
           {/* Password */}
-          <div className="field-group">
+          <div className="field-group" style={{ marginBottom: 28 }}>
             <label className="field-label">Password</label>
             <div className="field-wrap">
               <span className="field-icon"><IconLock /></span>
@@ -354,14 +346,6 @@ export default function LoginPage() {
               </button>
             </div>
             {errors.password && <div className="error-msg"><IconAlert />{errors.password}</div>}
-          </div>
-
-          <div className="options-row">
-            <label className="remember-wrap" onClick={() => setRemember(v => !v)}>
-              <input className="remember-checkbox" type="checkbox" checked={remember} onChange={() => {}} />
-              <span className="remember-label">Remember me</span>
-            </label>
-            <button className="forgot-link" type="button">Forgot password?</button>
           </div>
 
           <button className="login-btn" onClick={handleLogin} disabled={loading}>
