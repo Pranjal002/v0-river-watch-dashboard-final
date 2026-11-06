@@ -153,7 +153,7 @@ export const riverAPI = {
     });
   },
   getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
-    return apiCall(`/river/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+    return apiCall(`/river/paged?pageNo=${pageNumber}&pageNumber=${pageNumber}&pageSize=${pageSize}`, {
       method: 'GET',
     });
   },
@@ -200,7 +200,7 @@ export const stationAPI = {
     });
   },
   getPaged: async (pageNumber: number = 1, pageSize: number = 10) => {
-    return apiCall(`/station/paged?pageNumber=${pageNumber}&pageSize=${pageSize}`, {
+    return apiCall(`/station/paged?pageNo=${pageNumber}&pageNumber=${pageNumber}&pageSize=${pageSize}`, {
       method: 'GET',
     });
   },

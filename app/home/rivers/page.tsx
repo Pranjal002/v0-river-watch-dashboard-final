@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/sidebar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Waves, Trash2 } from 'lucide-react';
+import { Plus, Waves, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,22 +39,24 @@ export default function RiversPage() {
   const [showForm, setShowForm] = useState(false);
   const [rivers, setRivers] = useState<River[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const pageSize = 10;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteRiverId, setDeleteRiverId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    fetchRivers();
-  }, []);
+    fetchRivers(pageNumber);
+  }, [pageNumber]);
 
-  const fetchRivers = async () => {
+  const fetchRivers = async (page = pageNumber) => {
     try {
       setLoading(true);
       setError('');
-      const response: RiverResponse = await riverAPI.getPaged(1, 10);
+      const response = (await riverAPI.getPaged(page, pageSize)) as RiverResponse;
 
-      if (response.data) {
+      if (response?.data) {
         setRivers(response.data.items || []);
         setTotalCount(response.data.totalCount || 0);
       }
@@ -68,7 +70,11 @@ export default function RiversPage() {
 
   const handleFormClose = () => {
     setShowForm(false);
-    fetchRivers(); // Refresh the list after adding a river
+    if (pageNumber === 1) {
+      fetchRivers(1);
+    } else {
+      setPageNumber(1);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -76,13 +82,36 @@ export default function RiversPage() {
     try {
       setIsDeleting(true);
       await riverAPI.delete(deleteRiverId);
-      fetchRivers();
+      if (rivers.length === 1 && pageNumber > 1) {
+        setPageNumber(prev => prev - 1);
+      } else {
+        fetchRivers(pageNumber);
+      }
     } catch (err) {
       console.error('Failed to delete river:', err);
     } finally {
       setIsDeleting(false);
       setDeleteRiverId(null);
     }
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (pageNumber <= 3) {
+        pages.push(1, 2, 3, 4, '...', totalPages);
+      } else if (pageNumber >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', pageNumber - 1, pageNumber, pageNumber + 1, '...', totalPages);
+      }
+    }
+    return pages;
   };
 
   return (
@@ -188,6 +217,58 @@ export default function RiversPage() {
                       </tbody>
                     </table>
                   </div>
+
+                  {totalCount > 10 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border bg-muted/40">
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Showing <span className="text-foreground font-bold">{(pageNumber - 1) * pageSize + 1}</span> to <span className="text-foreground font-bold">{Math.min(pageNumber * pageSize, totalCount)}</span> of <span className="text-foreground font-bold">{totalCount}</span> results
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPageNumber(prev => Math.max(1, prev - 1))}
+                          disabled={pageNumber === 1 || loading}
+                          className="gap-1 bg-transparent border-border text-foreground hover:bg-muted text-sm font-medium h-9 px-3 disabled:opacity-50"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span className="hidden sm:inline">Previous</span>
+                        </Button>
+                        <div className="flex items-center space-x-1">
+                          {getPageNumbers().map((pageNum, idx) => (
+                            pageNum === '...' ? (
+                              <span key={`ellipsis-${idx}`} className="px-2 py-1 text-sm text-muted-foreground">...</span>
+                            ) : (
+                              <Button
+                                key={`page-${pageNum}`}
+                                variant={pageNumber === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setPageNumber(pageNum as number)}
+                                disabled={loading}
+                                className={`h-9 w-9 p-0 text-sm font-medium ${
+                                  pageNumber === pageNum
+                                    ? 'bg-primary text-primary-foreground border-transparent'
+                                    : 'bg-transparent border-border text-foreground hover:bg-muted'
+                                }`}
+                              >
+                                {pageNum}
+                              </Button>
+                            )
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPageNumber(prev => Math.min(totalPages, prev + 1))}
+                          disabled={pageNumber >= totalPages || loading}
+                          className="gap-1 bg-transparent border-border text-foreground hover:bg-muted text-sm font-medium h-9 px-3 disabled:opacity-50"
+                        >
+                          <span className="hidden sm:inline">Next</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </Card>
               )}
             </>
